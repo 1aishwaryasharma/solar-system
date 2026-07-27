@@ -9,6 +9,7 @@
 window.SPACE = (function () {
 
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // ── GLSL simplex noise (Ashima Arts / Stefan Gustavson) ──
   const GLSL_NOISE = `
@@ -133,7 +134,7 @@ float fbm(vec3 p) {
         fragmentShader: `
           varying vec3 vN; uniform vec3 c; uniform float b; uniform float e; uniform float m;
           void main() {
-            float intensity = pow(b - dot(vN, vec3(0.0, 0.0, 1.0)), e);
+            float intensity = pow(max(b - dot(vN, vec3(0.0, 0.0, 1.0)), 0.0), e);
             gl_FragColor = vec4(c, 1.0) * intensity * m;
           }`
       })
@@ -265,9 +266,18 @@ float fbm(vec3 p) {
         e.preventDefault();
       }
     }, { passive: false });
-    dom.addEventListener('touchend', () => {
-      if (onPick && touchStart && touchMoved < 10) onPick(touchStart.x, touchStart.y);
-      touchPrev = null; pinchPrev = null; touchStart = null;
+    dom.addEventListener('touchend', (e) => {
+      if (e.touches.length === 0 && onPick && touchStart && touchMoved < 10) {
+        onPick(touchStart.x, touchStart.y);
+      }
+      touchPrev = e.touches.length === 1
+        ? { x: e.touches[0].clientX, y: e.touches[0].clientY }
+        : null;
+      pinchPrev = null;
+      touchStart = null;
+    });
+    dom.addEventListener('touchcancel', () => {
+      touchPrev = null; pinchPrev = null; touchStart = null; touchMoved = 0;
     });
 
     cam.maxDistance = maxDFn;
@@ -289,7 +299,16 @@ float fbm(vec3 p) {
     if (!_v) _v = new THREE.Vector3();
     obj.getWorldPosition(_v);
     _v.project(camera);
-    if (_v.z > 1 || !visible) { el.style.opacity = 0; return; }
+    if (
+      !visible ||
+      _v.z < -1 || _v.z > 1 ||
+      Math.abs(_v.x) > 1.1 || Math.abs(_v.y) > 1.1
+    ) {
+      el.style.opacity = 0;
+      el.style.display = 'none';
+      return;
+    }
+    el.style.display = '';
     el.style.left = (_v.x * 0.5 + 0.5) * window.innerWidth + 'px';
     el.style.top  = (_v.y * -0.5 + 0.5) * window.innerHeight + offsetY + 'px';
     el.style.opacity = 1;
@@ -305,26 +324,58 @@ float fbm(vec3 p) {
     { key: 'missions', href: 'missions.html',     label: 'Missions' }
   ];
   function buildNav(currentKey) {
-    const nav = document.createElement('div');
+    const nav = document.createElement('nav');
     nav.className = 'scene-nav';
+    nav.setAttribute('aria-label', 'Explore scenes');
     const btn = document.createElement('button');
     btn.className = 'scene-nav-btn';
+    btn.type = 'button';
     btn.textContent = '✦ Explore';
+    btn.setAttribute('aria-expanded', 'false');
+    btn.setAttribute('aria-haspopup', 'true');
     const menu = document.createElement('div');
     menu.className = 'scene-menu';
+    menu.id = 'scene-menu';
+    menu.hidden = true;
+    btn.setAttribute('aria-controls', menu.id);
     SCENES.forEach(s => {
       const a = document.createElement('a');
       a.href = s.href;
       a.className = s.key === currentKey ? 'current' : '';
+      if (s.key === currentKey) a.setAttribute('aria-current', 'page');
       a.innerHTML = '<span class="dot"></span>' + s.label;
       menu.appendChild(a);
     });
     nav.appendChild(btn);
     nav.appendChild(menu);
-    btn.addEventListener('click', (e) => { e.stopPropagation(); nav.classList.toggle('open'); });
-    document.addEventListener('click', () => nav.classList.remove('open'));
+    function setOpen(open) {
+      nav.classList.toggle('open', open);
+      btn.setAttribute('aria-expanded', String(open));
+      menu.hidden = !open;
+    }
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setOpen(!nav.classList.contains('open'));
+    });
+    nav.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        setOpen(false);
+        btn.focus();
+      }
+    });
+    document.addEventListener('click', () => setOpen(false));
     document.body.appendChild(nav);
   }
 
-  return { clamp, GLSL_NOISE, createStarfield, glowShell, createSun, createOrbitControls, projectToScreen, buildNav };
+  return {
+    clamp,
+    prefersReducedMotion,
+    GLSL_NOISE,
+    createStarfield,
+    glowShell,
+    createSun,
+    createOrbitControls,
+    projectToScreen,
+    buildNav
+  };
 })();

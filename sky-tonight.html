@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>What's in the Sky Tonight?</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css">
+<link rel="stylesheet" href="common.css?v=20260727-2">
 <style>
   #sky { position: fixed; inset: 0; z-index: 0; display: block; }
   .info-panel { top: 104px; width: 340px; max-height: calc(100vh - 220px); overflow: auto; }
@@ -26,25 +26,33 @@
   .date-controls { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 16px; z-index: 10; background: var(--panel); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--line); border-radius: 2px; padding: 12px 20px; max-width: calc(100vw - 32px); }
   .date-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-dim); }
   .date-value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--accent); min-width: 118px; text-align: center; }
-  .date-slider { -webkit-appearance: none; appearance: none; width: 220px; height: 2px; background: rgba(232,236,244,0.15); outline: none; }
+  .date-slider {
+    -webkit-appearance: none; appearance: none; width: 220px; height: 24px;
+    background: linear-gradient(rgba(232,236,244,0.15), rgba(232,236,244,0.15)) center / 100% 2px no-repeat;
+    outline: none;
+  }
   .date-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 2px solid var(--bg); box-shadow: 0 0 0 1px var(--accent); }
   .date-slider::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 2px solid var(--bg); }
   .today-btn { background: transparent; border: 1px solid var(--line); color: var(--ink-dim); font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; padding: 6px 10px; border-radius: 2px; cursor: pointer; transition: all 0.2s; }
   .today-btn:hover { color: var(--accent); border-color: rgba(244,197,96,0.4); }
   @media (max-width: 820px) {
-    .info-panel { top: auto; bottom: 92px; left: 12px; right: 12px; width: auto; max-height: 44vh; }
+    .info-panel { top: auto; bottom: 126px; left: 12px; right: 12px; width: auto; max-height: 44vh; }
     .info-title { font-size: 19px; }
     .date-slider { width: 120px; } .date-controls { bottom: 12px; padding: 10px 12px; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  }
+  @media (max-height: 520px) and (orientation: landscape) {
+    .date-controls { bottom: 8px; padding: 7px 10px; gap: 8px; }
+    .date-slider { width: 150px; }
   }
 </style>
 </head>
 <body>
 
-<canvas id="sky"></canvas>
+<canvas id="sky" aria-hidden="true"></canvas>
 
 <header class="header">
   <div>
-    <h1 class="title">What's in the<br/><em>Sky Tonight?</em></h1>
+    <h1 class="title">What's in the<br><em>Sky Tonight?</em></h1>
     <div class="subtitle">Planet Positions · A Sky Guide · Look Up</div>
   </div>
   <div class="header-meta">
@@ -72,10 +80,10 @@
   <span class="date-label">Date</span>
   <input type="range" class="date-slider" id="date-slider" min="0" max="800" step="1" value="0" aria-label="Observation date">
   <span class="date-value" id="date-value">Today</span>
-  <button class="today-btn" id="today-btn">Today</button>
+  <button type="button" class="today-btn" id="today-btn">Today</button>
 </div>
 
-<script src="common.js"></script>
+<script src="common.js?v=20260727-2"></script>
 <script>
 'use strict';
 const clamp = SPACE.clamp;
@@ -213,6 +221,7 @@ function renderList(dOffset){
 function update(){
   metaDate.textContent = fmtDate(offset);
   dateValue.textContent = offset===0 ? 'Today' : ('+' + offset + ' days');
+  slider.setAttribute('aria-valuetext', fmtDate(offset));
   renderList(offset);
 }
 slider.oninput = () => { offset = parseInt(slider.value,10); update(); };
@@ -220,7 +229,11 @@ document.getElementById('today-btn').onclick = () => { offset=0; slider.value=0;
 update();
 
 let t0 = performance.now();
-function loop(){ requestAnimationFrame(loop); draw(offset, (performance.now()-t0)*0.001); }
+function loop(){
+  requestAnimationFrame(loop);
+  const t=SPACE.prefersReducedMotion ? 0 : (performance.now()-t0)*0.001;
+  draw(offset,t);
+}
 loop();
 SPACE.buildNav('sky');
 </script>

@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sol · Terra · Luna — A Light Study</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css">
+<link rel="stylesheet" href="common.css?v=20260727-2">
 <style>
   /* Shared design tokens & component styles live in common.css.
      Only page-specific rules for the light study remain here. */
+  .info-panel { top: 132px; }
+
   .info-fact {
     margin-top: 14px;
     padding-top: 12px;
@@ -102,6 +104,8 @@
       right: 16px;
       width: auto;
       padding: 16px 18px;
+      max-height: min(42vh, calc(100vh - 480px));
+      overflow: auto;
     }
     .info-title { font-size: 18px; }
     .info-body { font-size: 12px; }
@@ -125,19 +129,25 @@
     .hint { display: none; }
     .divider { display: none; }
   }
+  @media (max-height: 520px) and (orientation: landscape) {
+    .info-panel { top: 80px !important; max-height: calc(100vh - 156px) !important; }
+    .presets { top: 64px; right: 16px; transform: none; }
+    .preset-btn { width: 180px; padding: 7px 10px; font-size: 11px; }
+    .preset-btn .num { display: none; }
+  }
 </style>
 </head>
 <body>
 
 <div id="canvas-container"></div>
 
-<div class="loader" id="loader">
+<div class="loader" id="loader" role="status" aria-live="polite">
   <div class="loader-text">Igniting the sun…</div>
 </div>
 
 <header class="header">
   <div>
-    <h1 class="title">Sol · Terra · Luna<br/><em>a study of light</em></h1>
+    <h1 class="title">Sol · Terra · Luna<br><em>a study of light</em></h1>
     <div class="subtitle">Interactive · Three Bodies · One Star</div>
     <a class="nav-link" href="solar-system.html">The Sun &amp; its planets — grand tour ›</a>
   </div>
@@ -163,43 +173,43 @@
   </div>
 </aside>
 
-<div class="presets" id="presets">
-  <button class="preset-btn active" data-preset="free">
+<div class="presets" id="presets" role="group" aria-label="Observation presets">
+  <button type="button" class="preset-btn active" data-preset="free" aria-pressed="true">
     <span class="num">01</span>
     <span class="lbl">Free <em>observation</em></span>
   </button>
-  <button class="preset-btn" data-preset="daynight">
+  <button type="button" class="preset-btn" data-preset="daynight" aria-pressed="false">
     <span class="num">02</span>
     <span class="lbl">Day &amp; <em>Night</em></span>
   </button>
-  <button class="preset-btn" data-preset="phases">
+  <button type="button" class="preset-btn" data-preset="phases" aria-pressed="false">
     <span class="num">03</span>
     <span class="lbl">Lunar <em>Phases</em></span>
   </button>
-  <button class="preset-btn" data-preset="solar">
+  <button type="button" class="preset-btn" data-preset="solar" aria-pressed="false">
     <span class="num">04</span>
     <span class="lbl">Solar <em>Eclipse</em></span>
   </button>
-  <button class="preset-btn" data-preset="lunar">
+  <button type="button" class="preset-btn" data-preset="lunar" aria-pressed="false">
     <span class="num">05</span>
     <span class="lbl">Lunar <em>Eclipse</em></span>
   </button>
 </div>
 
 <div class="controls">
-  <button class="play-btn" id="play-btn" aria-label="Play / Pause">
+  <button type="button" class="play-btn" id="play-btn" aria-label="Pause simulation">
     <svg id="play-icon" viewBox="0 0 12 12" fill="currentColor"><path d="M2 1 L10 6 L2 11 Z"/></svg>
   </button>
   <div class="speed-group">
     <span class="speed-label">Speed</span>
-    <input type="range" class="speed-slider" id="speed-slider" min="-3" max="3" step="0.1" value="0" aria-label="Simulation speed">
+    <input type="range" class="speed-slider" id="speed-slider" min="-3" max="3" step="0.1" value="0" aria-label="Simulation speed" aria-valuetext="1.0× speed">
     <span class="speed-value" id="speed-value">1.0×</span>
   </div>
   <div class="divider"></div>
   <div class="toggle-group">
-    <button class="toggle-btn active" id="toggle-orbits">Orbits</button>
-    <button class="toggle-btn active" id="toggle-labels">Labels</button>
-    <button class="toggle-btn" id="toggle-axis">Axis</button>
+    <button type="button" class="toggle-btn active" id="toggle-orbits" aria-pressed="true">Orbits</button>
+    <button type="button" class="toggle-btn active" id="toggle-labels" aria-pressed="true">Labels</button>
+    <button type="button" class="toggle-btn" id="toggle-axis" aria-pressed="false">Axis</button>
   </div>
 </div>
 
@@ -207,11 +217,11 @@
   <span class="key">Drag</span> to rotate · <span class="key">Scroll</span> to zoom
 </div>
 
-<div class="label-3d sun" id="label-sun">Sun</div>
-<div class="label-3d earth" id="label-earth">Earth</div>
-<div class="label-3d moon" id="label-moon">Moon</div>
+<div class="label-3d sun" id="label-sun" aria-hidden="true">Sun</div>
+<div class="label-3d earth" id="label-earth" aria-hidden="true">Earth</div>
+<div class="label-3d moon" id="label-moon" aria-hidden="true">Moon</div>
 
-<script src="common.js"></script>
+<script src="common.js?v=20260727-2"></script>
 <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
 <script src="https://unpkg.com/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
 <script src="https://unpkg.com/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
@@ -237,6 +247,7 @@ const camera = new THREE.PerspectiveCamera(
 );
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+renderer.domElement.setAttribute('aria-hidden', 'true');
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
@@ -457,7 +468,7 @@ const sunInner = new THREE.Mesh(
       varying vec3 vN;
       uniform vec3 c;
       void main() {
-        float intensity = pow(0.7 - dot(vN, vec3(0.0, 0.0, 1.0)), 2.0);
+        float intensity = pow(max(0.7 - dot(vN, vec3(0.0, 0.0, 1.0)), 0.0), 2.0);
         gl_FragColor = vec4(c, 1.0) * intensity;
       }`
   })
@@ -483,7 +494,7 @@ const sunCorona = new THREE.Mesh(
       varying vec3 vN;
       uniform vec3 c;
       void main() {
-        float intensity = pow(0.55 - dot(vN, vec3(0.0, 0.0, 1.0)), 3.0);
+        float intensity = pow(max(0.55 - dot(vN, vec3(0.0, 0.0, 1.0)), 0.0), 3.0);
         gl_FragColor = vec4(c, 1.0) * intensity * 0.6;
       }`
   })
@@ -885,7 +896,7 @@ const atmosphere = new THREE.Mesh(
       varying vec3 vWN;
       uniform vec3 sunDir;
       void main() {
-        float intensity = pow(0.72 - dot(vN, vec3(0.0, 0.0, 1.0)), 2.5);
+        float intensity = pow(max(0.72 - dot(vN, vec3(0.0, 0.0, 1.0)), 0.0), 2.5);
         float sunFacing = clamp(dot(normalize(vWN), sunDir) * 0.5 + 0.5, 0.0, 1.0);
         vec3 col = mix(vec3(0.08, 0.18, 0.45), vec3(0.45, 0.7, 1.0), sunFacing);
         gl_FragColor = vec4(col, 1.0) * intensity * 0.9;
@@ -1082,7 +1093,7 @@ window.addEventListener('resize', () => {
 const sim = {
   time: 0,           // simulation time
   speed: 1,          // -3..3 (slider) but we use sliderToSpeed
-  playing: true,
+  playing: !SPACE.prefersReducedMotion,
   earthSpinSpeed: 0.6, // one displayed rotation represents one mean Earth day
   moonOrbitSpeed: 0.6 / EARTH_DAYS_PER_MOON_ORBIT,
   sunYearSpeed: 0.6 / EARTH_DAYS_PER_YEAR,
@@ -1126,27 +1137,35 @@ const infoFactText = document.getElementById('info-fact-text');
 const PLAY_ICON = '<path d="M2 1 L10 6 L2 11 Z"/>';
 const PAUSE_ICON = '<path d="M2 1 L4.5 1 L4.5 11 L2 11 Z M7.5 1 L10 1 L10 11 L7.5 11 Z"/>';
 
-playBtn.addEventListener('click', () => {
-  sim.playing = !sim.playing;
+function updatePlayButton() {
   playIcon.innerHTML = sim.playing ? PAUSE_ICON : PLAY_ICON;
-});
-playIcon.innerHTML = PAUSE_ICON; // start playing
+  playBtn.setAttribute('aria-label', sim.playing ? 'Pause simulation' : 'Play simulation');
+}
+function setPlaying(playing) {
+  sim.playing = playing;
+  updatePlayButton();
+}
+playBtn.addEventListener('click', () => setPlaying(!sim.playing));
+updatePlayButton();
 
 speedSlider.addEventListener('input', () => {
   const v = parseFloat(speedSlider.value);
   const s = sliderToSpeed(v);
   sim.speed = s;
   speedValue.textContent = s.toFixed(s < 1 ? 2 : 1) + '×';
+  speedSlider.setAttribute('aria-valuetext', `${speedValue.textContent} speed`);
 });
 
 toggleOrbits.addEventListener('click', () => {
   sim.showOrbits = !sim.showOrbits;
   orbitLine.visible = sim.showOrbits;
   toggleOrbits.classList.toggle('active', sim.showOrbits);
+  toggleOrbits.setAttribute('aria-pressed', String(sim.showOrbits));
 });
 toggleLabels.addEventListener('click', () => {
   sim.showLabels = !sim.showLabels;
   toggleLabels.classList.toggle('active', sim.showLabels);
+  toggleLabels.setAttribute('aria-pressed', String(sim.showLabels));
   [labelSun, labelEarth, labelMoon].forEach(l => {
     l.style.display = sim.showLabels ? '' : 'none';
   });
@@ -1155,6 +1174,7 @@ toggleAxis.addEventListener('click', () => {
   sim.showAxis = !sim.showAxis;
   axisLine.visible = sim.showAxis;
   toggleAxis.classList.toggle('active', sim.showAxis);
+  toggleAxis.setAttribute('aria-pressed', String(sim.showAxis));
 });
 
 // ─────────────────────────────────────────────────────────
@@ -1176,6 +1196,11 @@ const presetData = {
     body: 'Notice how exactly half of Earth is lit at any moment. The other half is in <strong>night</strong> — watch the city lights appear as each continent rotates into darkness. Earth completes one mean solar rotation every 24 hours. Its <strong>23.4° axial tilt</strong> changes day length through the seasons.',
     fact: 'When it\'s lunchtime where you live, kids on the opposite side of Earth are fast asleep at midnight.',
     apply: () => {
+      setPlaying(true);
+      sim.speed = 1;
+      speedSlider.value = '0';
+      speedValue.textContent = '1.0×';
+      speedSlider.setAttribute('aria-valuetext', '1.0× speed');
       sim.moonPhaseAngle = Math.PI * 0.5; // park moon out of the way
       sim.moonNodeLongitude = THREE.MathUtils.degToRad(32);
       cam.azimuthTarget = 0.3;
@@ -1190,10 +1215,12 @@ const presetData = {
     body: 'The Moon doesn\'t make its own light — it reflects sunlight. Half is always lit, but we see different fractions as it moves. The Moon orbits relative to the stars in <strong>27.3 days</strong>; because Earth also travels around the Sun, the phase cycle takes <strong>29.5 days</strong>.',
     fact: 'The Moon rotates once per orbit, keeping nearly the same face toward Earth. Small real wobbles called libration are omitted here.',
     apply: () => {
+      setPlaying(true);
       sim.moonNodeLongitude = THREE.MathUtils.degToRad(32);
       sim.speed = 1.5;
       speedSlider.value = Math.log2(1.5).toFixed(2);
       speedValue.textContent = '1.5×';
+      speedSlider.setAttribute('aria-valuetext', '1.5× speed');
       cam.azimuthTarget = 0.5;
       cam.elevationTarget = 0.5;
       cam.distanceTarget = 12;
@@ -1206,8 +1233,7 @@ const presetData = {
     body: 'When the <strong>Moon passes between the Sun and Earth</strong>, it casts a small shadow on Earth\'s surface. Anyone standing inside that shadow sees the Sun blocked — a <strong>solar eclipse</strong>. It happens at new moon, but only when the Moon\'s tilted orbit aligns precisely with the Sun-Earth line.',
     fact: 'The Moon\'s shadow races across Earth faster than 2,000 km/h — quicker than any jet plane.',
     apply: () => {
-      sim.playing = false;
-      playIcon.innerHTML = PLAY_ICON;
+      setPlaying(false);
       sim.sunLongitude = Math.PI;
       sim.moonNodeLongitude = 0;
       sim.moonPhaseAngle = Math.PI; // moon between sun (-X) and earth → moon at -X side
@@ -1223,8 +1249,7 @@ const presetData = {
     body: 'When the <strong>Earth passes between the Sun and Moon</strong>, Earth\'s shadow falls onto the Moon. The full moon dims dramatically and can take on a muted copper tone from sunlight filtered through Earth\'s atmosphere. This is a <strong>lunar eclipse</strong>, visible to anyone on Earth\'s night side.',
     fact: 'The copper tint is real but usually subtle: Earth\'s atmosphere removes more blue light while bending the remaining warm light into the shadow.',
     apply: () => {
-      sim.playing = false;
-      playIcon.innerHTML = PLAY_ICON;
+      setPlaying(false);
       sim.sunLongitude = Math.PI;
       sim.moonNodeLongitude = 0;
       sim.moonPhaseAngle = 0; // moon at +X, earth between sun and moon
@@ -1238,7 +1263,11 @@ const presetData = {
 
 function applyPreset(name) {
   sim.preset = name;
-  presetEls.forEach(el => el.classList.toggle('active', el.dataset.preset === name));
+  presetEls.forEach(el => {
+    const active = el.dataset.preset === name;
+    el.classList.toggle('active', active);
+    el.setAttribute('aria-pressed', String(active));
+  });
   const p = presetData[name];
   infoLabel.textContent = p.label;
   infoTitle.textContent = p.title;
@@ -1257,7 +1286,15 @@ function project(obj3D, labelEl, offsetY = -34) {
   const v = new THREE.Vector3();
   obj3D.getWorldPosition(v);
   v.project(camera);
-  if (v.z > 1) { labelEl.style.opacity = 0; return; }
+  if (
+    v.z < -1 || v.z > 1 ||
+    Math.abs(v.x) > 1.1 || Math.abs(v.y) > 1.1
+  ) {
+    labelEl.style.opacity = 0;
+    labelEl.style.display = 'none';
+    return;
+  }
+  labelEl.style.display = '';
   const x = (v.x *  0.5 + 0.5) * window.innerWidth;
   const y = (v.y * -0.5 + 0.5) * window.innerHeight + offsetY;
   labelEl.style.left = x + 'px';
@@ -1379,12 +1416,13 @@ function animate() {
   applyCamera();
 
   // Animated shader clocks
-  const t = now * 0.001;
+  const motionNow = SPACE.prefersReducedMotion ? 0 : now;
+  const t = motionNow * 0.001;
   sunUniforms.uTime.value = t;
   starUniforms.uTime.value = t;
 
   // Subtle sun "breath" — corona shimmer
-  sunCorona.scale.setScalar(1 + Math.sin(now * 0.0015) * 0.015);
+  sunCorona.scale.setScalar(1 + Math.sin(motionNow * 0.0015) * 0.015);
 
   // Night-lights shader needs the sun direction in view space
   _sunDirView.copy(sunGroup.position).normalize()

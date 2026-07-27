@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>The Sun & Its Planets — A Grand Tour</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Sun &amp; Its Planets — A Grand Tour</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css">
+<link rel="stylesheet" href="common.css?v=20260727-2">
 <style>
   /* ── Page-specific styling for the grand tour ── */
-  .info-panel { top: 104px; width: 330px; }
+  .info-panel { top: 132px; width: 330px; }
   .info-title { font-size: 26px; line-height: 1.1; }
 
   .facts { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 4px; }
@@ -105,19 +105,41 @@
     .header { padding: 16px 18px; }
     .title { font-size: 16px; }
     .header-meta { font-size: 8px; }
-    .info-panel { top: auto; bottom: 210px; left: 16px; right: 16px; width: auto; padding: 16px 18px; max-height: 44vh; overflow: auto; }
+    .info-panel {
+      top: auto; bottom: 246px; left: 16px; right: 16px; width: auto;
+      padding: 16px 18px; max-height: min(44vh, calc(100vh - 424px)); overflow: auto;
+    }
     .info-title { font-size: 20px; }
-    .bodies { top: 74px; right: 12px; transform: none; gap: 3px; max-height: 42vh; }
-    .body-btn { width: 128px; padding: 6px 10px; font-size: 11px; }
+    .bodies {
+      top: 120px; left: 12px; right: 12px; transform: none;
+      flex-direction: row; gap: 3px; max-height: none;
+      overflow-x: auto; overflow-y: hidden;
+    }
+    .body-btn { width: auto; min-width: 112px; padding: 6px 10px; font-size: 11px; }
     .body-btn .num { display: none; }
+    .body-sep { display: none; }
     .controls { bottom: 14px; padding: 10px 12px; gap: 10px; flex-wrap: wrap; justify-content: center; }
     .speed-slider { width: 76px; }
     .toggle-btn { padding: 5px 8px; font-size: 8px; }
     .hint { display: none; }
     .divider { display: none; }
-    .scale-note { bottom: 140px; font-size: 11px; }
-    body.mode-active .info-panel { display: none; }
-    .stage { bottom: 210px; width: calc(100vw - 32px); box-sizing: border-box; }
+    .scale-note {
+      bottom: 246px; width: calc(100vw - 32px);
+      box-sizing: border-box; font-size: 11px;
+    }
+    body.mode-active .info-panel,
+    body.scale-active .info-panel { display: none; }
+    .stage { bottom: 246px; width: calc(100vw - 32px); box-sizing: border-box; }
+  }
+  @media (max-height: 520px) and (orientation: landscape) {
+    .info-panel { top: 80px !important; max-height: calc(100vh - 156px) !important; }
+    .bodies {
+      top: 64px; right: 16px; transform: none;
+      max-height: calc(100vh - 140px);
+    }
+    .body-btn { padding: 6px 10px; font-size: 11px; width: 150px; }
+    .stage { bottom: 72px; }
+    .scale-note { bottom: 72px; }
   }
 </style>
 </head>
@@ -125,13 +147,13 @@
 
 <div id="canvas-container"></div>
 
-<div class="loader" id="loader">
+<div class="loader" id="loader" role="status" aria-live="polite">
   <div class="loader-text">Charting the planets…</div>
 </div>
 
 <header class="header">
   <div>
-    <h1 class="title">The Sun &amp; Its Planets<br/><em>a grand tour</em></h1>
+    <h1 class="title">The Sun &amp; Its Planets<br><em>a grand tour</em></h1>
     <div class="subtitle">Interactive · Eight Worlds · One Star</div>
     <a class="back-link" href="index.html">‹ Sol · Terra · Luna — light study</a>
   </div>
@@ -156,33 +178,33 @@
 <div class="bodies" id="bodies"></div>
 
 <div class="controls">
-  <button class="play-btn" id="play-btn" aria-label="Play / Pause">
+  <button type="button" class="play-btn" id="play-btn" aria-label="Pause simulation">
     <svg id="play-icon" viewBox="0 0 12 12" fill="currentColor"><path d="M2 1 L10 6 L2 11 Z"/></svg>
   </button>
   <div class="speed-group">
     <span class="speed-label">Speed</span>
-    <input type="range" class="speed-slider" id="speed-slider" min="-3" max="3" step="0.1" value="0" aria-label="Simulation speed">
+    <input type="range" class="speed-slider" id="speed-slider" min="-3" max="3" step="0.1" value="0" aria-label="Simulation speed" aria-valuetext="1.0× speed">
     <span class="speed-value" id="speed-value">1.0×</span>
   </div>
   <div class="divider"></div>
   <div class="toggle-group">
-    <button class="toggle-btn active" id="toggle-orbits">Orbits</button>
-    <button class="toggle-btn active" id="toggle-labels">Labels</button>
-    <button class="toggle-btn active" id="toggle-belts">Belts</button>
-    <button class="toggle-btn" id="toggle-scale">True&nbsp;Scale</button>
+    <button type="button" class="toggle-btn active" id="toggle-orbits" aria-pressed="true">Orbits</button>
+    <button type="button" class="toggle-btn active" id="toggle-labels" aria-pressed="true">Labels</button>
+    <button type="button" class="toggle-btn active" id="toggle-belts" aria-pressed="true">Belts</button>
+    <button type="button" class="toggle-btn" id="toggle-scale" aria-pressed="false">True&nbsp;Scale</button>
   </div>
   <div class="divider"></div>
   <div class="toggle-group">
-    <button class="toggle-btn" id="btn-tour">▶ Tour</button>
-    <button class="toggle-btn" id="btn-quiz">? Quiz</button>
+    <button type="button" class="toggle-btn" id="btn-tour" aria-pressed="false">▶ Tour</button>
+    <button type="button" class="toggle-btn" id="btn-quiz" aria-pressed="false">? Quiz</button>
   </div>
 </div>
 
-<div class="stage" id="stage">
+<div class="stage" id="stage" role="status" aria-live="polite">
   <div class="stage-text" id="stage-text"></div>
   <div class="stage-actions">
-    <button class="stage-btn" id="stage-next">Next ›</button>
-    <button class="stage-btn ghost" id="stage-stop">✕ End</button>
+    <button type="button" class="stage-btn" id="stage-next">Next ›</button>
+    <button type="button" class="stage-btn ghost" id="stage-stop">✕ End</button>
   </div>
 </div>
 
@@ -205,7 +227,7 @@
 <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
 <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
 <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
-<script src="common.js"></script>
+<script src="common.js?v=20260727-2"></script>
 <script>
 'use strict';
 const clamp = SPACE.clamp;
@@ -220,6 +242,7 @@ scene.background = new THREE.Color(0x050810);
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.05, 4000);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+renderer.domElement.setAttribute('aria-hidden', 'true');
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.outputEncoding = THREE.sRGBEncoding;
@@ -309,7 +332,7 @@ const PLANETS = [
       weight: 'At the cloud tops a 30&nbsp;kg kid would weigh about <strong>27&nbsp;kg</strong>.' },
     wow: 'Uranus is tipped over on its side, so each of its summers and winters lasts about 21 Earth years.' },
 
-  { key: 'neptune', name: 'Neptune', num: '08', radiusKm: 24622, au: 30.07, periodDays: 59800, rotationHours: 16.11,
+  { key: 'neptune', name: 'Neptune', num: '08', radiusKm: 24622, au: 30.07, periodDays: 60190, rotationHours: 16.11,
     tiltDeg: 28.32, retro: false, moons: 16, g: 1.14, dot: '#3f6fd8', type: 'ice', base: '#3b6fd0',
     bands: ['#3b6fd0', '#4f80dc', '#3160b8', '#5a8ae0'],
     spot: { x: 0.40, y: 0.44, rx: 0.06, ry: 0.045, color: '#20407e' },
@@ -353,7 +376,7 @@ const SUN_INFO = {
   key: 'sun', name: 'The Sun', num: '☀', dot: '#f4c560',
   blurb: 'Our star — a giant, glowing ball of hot gas that gives every planet its light and warmth.',
   facts: { size: 'About <strong>1.3 million Earths</strong> could fit inside!', day: 'It spins around about once every <strong>25 Earth days</strong>.',
-    year: 'It doesn\'t orbit — <strong>everything orbits around it</strong>.', moons: '<strong>8 planets</strong> circle it, plus moons, dwarf planets and comets.',
+    year: 'It circles the Milky Way about once every <strong>230 million Earth years</strong>.', moons: '<strong>8 planets</strong> circle it, plus moons, dwarf planets and comets.',
     weight: 'You could never stand on it — it\'s all glowing gas and far too hot!' },
   wow: 'The Sun holds more than 99 out of every 100 bits of stuff in the whole solar system.'
 };
@@ -712,7 +735,7 @@ window.addEventListener('resize', () => {
 // 10. STATE + CONTROLS
 // ─────────────────────────────────────────────────────────
 const DAYS_PER_SEC = 18;
-const sim = { timeDays: 0, speed: 1, playing: true, showOrbits: true, showLabels: true,
+const sim = { timeDays: 0, speed: 1, playing: !SPACE.prefersReducedMotion, showOrbits: true, showLabels: true,
               showBelts: true, trueScale: false, selected: null, follow: false };
 
 const $ = id => document.getElementById(id);
@@ -727,31 +750,44 @@ const infoFacts = $('info-facts'), infoWow = $('info-wow'), infoWowText = $('inf
 
 const PLAY_ICON = '<path d="M2 1 L10 6 L2 11 Z"/>';
 const PAUSE_ICON = '<path d="M2 1 L4.5 1 L4.5 11 L2 11 Z M7.5 1 L10 1 L10 11 L7.5 11 Z"/>';
-playIcon.innerHTML = PAUSE_ICON;
-playBtn.addEventListener('click', () => { sim.playing = !sim.playing; playIcon.innerHTML = sim.playing ? PAUSE_ICON : PLAY_ICON; });
+function updatePlayButton() {
+  playIcon.innerHTML = sim.playing ? PAUSE_ICON : PLAY_ICON;
+  playBtn.setAttribute('aria-label', sim.playing ? 'Pause simulation' : 'Play simulation');
+}
+playBtn.addEventListener('click', () => {
+  sim.playing = !sim.playing;
+  updatePlayButton();
+});
+updatePlayButton();
 speedSlider.addEventListener('input', () => {
   sim.speed = Math.pow(2, parseFloat(speedSlider.value));
   speedValue.textContent = sim.speed.toFixed(sim.speed < 1 ? 2 : 1) + '×';
+  speedSlider.setAttribute('aria-valuetext', `${speedValue.textContent} speed`);
 });
 toggleOrbits.addEventListener('click', () => {
   sim.showOrbits = !sim.showOrbits;
   WORLDS.forEach(w => w.ring.visible = sim.showOrbits);
   COMET.orbitLine.visible = sim.showOrbits;
   toggleOrbits.classList.toggle('active', sim.showOrbits);
+  toggleOrbits.setAttribute('aria-pressed', String(sim.showOrbits));
 });
 toggleLabels.addEventListener('click', () => {
   sim.showLabels = !sim.showLabels;
   toggleLabels.classList.toggle('active', sim.showLabels);
+  toggleLabels.setAttribute('aria-pressed', String(sim.showLabels));
 });
 toggleBelts.addEventListener('click', () => {
   sim.showBelts = !sim.showBelts;
   asteroidBelt.points.visible = sim.showBelts;
   kuiperBelt.points.visible = sim.showBelts;
   toggleBelts.classList.toggle('active', sim.showBelts);
+  toggleBelts.setAttribute('aria-pressed', String(sim.showBelts));
 });
 toggleScale.addEventListener('click', () => {
   sim.trueScale = !sim.trueScale;
   toggleScale.classList.toggle('active', sim.trueScale);
+  toggleScale.setAttribute('aria-pressed', String(sim.trueScale));
+  document.body.classList.toggle('scale-active', sim.trueScale);
   scaleNote.classList.toggle('show', sim.trueScale);
   scaleNote.setAttribute('aria-hidden', String(!sim.trueScale));
   metaScale.textContent = sim.trueScale ? 'True scale' : 'Made to fit';
@@ -769,7 +805,9 @@ const labels = {};
 
 function addButton(info) {
   const btn = document.createElement('button');
+  btn.type = 'button';
   btn.className = 'body-btn'; btn.dataset.key = info.key;
+  btn.setAttribute('aria-pressed', 'false');
   btn.innerHTML = `<span class="body-dot" style="background:${info.dot}; color:${info.dot}"></span><span>${info.name}</span><span class="num">${info.num}</span>`;
   btn.addEventListener('click', () => selectBody(info.key));
   bodiesEl.appendChild(btn);
@@ -781,11 +819,14 @@ function addSeparator(text) {
 }
 function addLabel(info) {
   const el = document.createElement('div'); el.className = 'label-3d'; el.textContent = info.name;
+  el.setAttribute('aria-hidden', 'true');
   labelLayer.appendChild(el); labels[info.key] = el;
 }
 
 const overviewBtn = document.createElement('button');
+overviewBtn.type = 'button';
 overviewBtn.className = 'body-btn active'; overviewBtn.dataset.key = 'overview';
+overviewBtn.setAttribute('aria-pressed', 'true');
 overviewBtn.innerHTML = `<span class="body-dot" style="background:#8893a8;color:#8893a8"></span><span>Whole family</span><span class="num">◎</span>`;
 overviewBtn.addEventListener('click', () => selectBody(null));
 bodiesEl.appendChild(overviewBtn);
@@ -826,8 +867,15 @@ function renderOverview() {
 // 13. SELECTION + FOLLOW
 // ─────────────────────────────────────────────────────────
 function setActiveButton(key) {
-  Object.values(bodyButtons).forEach(b => b.classList.remove('active'));
-  const b = bodyButtons[key || 'overview']; if (b) b.classList.add('active');
+  Object.values(bodyButtons).forEach(b => {
+    b.classList.remove('active');
+    b.setAttribute('aria-pressed', 'false');
+  });
+  const b = bodyButtons[key || 'overview'];
+  if (b) {
+    b.classList.add('active');
+    b.setAttribute('aria-pressed', 'true');
+  }
 }
 function infoByKey(key) {
   if (key === 'sun') return SUN_INFO;
@@ -929,10 +977,11 @@ function animate() {
 
   cam.update();
 
-  const t = now * 0.001;
+  const motionNow = SPACE.prefersReducedMotion ? 0 : now;
+  const t = motionNow * 0.001;
   sunUniforms.uTime.value = t;
   starUniforms.uTime.value = t;
-  SUN.corona.scale.setScalar(1 + Math.sin(now * 0.0015) * 0.015);
+  SUN.corona.scale.setScalar(1 + Math.sin(motionNow * 0.0015) * 0.015);
 
   SPACE.projectToScreen(SUN.group, labels.sun, camera, -SUN_DISPLAY_R * 14, sim.showLabels);
   WORLDS.forEach(w => SPACE.projectToScreen(w.holder, labels[w.key], camera, -currentRadius(w) * 14 - 14, sim.showLabels));
@@ -981,6 +1030,8 @@ function stopModes() {
   stageEl.classList.remove('show');
   document.body.classList.remove('mode-active');
   btnTour.classList.remove('active'); btnQuiz.classList.remove('active');
+  btnTour.setAttribute('aria-pressed', 'false');
+  btnQuiz.setAttribute('aria-pressed', 'false');
 }
 function showTourStep() {
   const step = TOUR[tour.i];
@@ -988,7 +1039,9 @@ function showTourStep() {
   selectBody(step.key);
   stageNext.textContent = (tour.i === TOUR.length - 1) ? 'Finish' : 'Next ›';
   if (tour.timer) clearTimeout(tour.timer);
-  if (tour.i < TOUR.length - 1) tour.timer = setTimeout(nextTourStep, 8000);
+  if (!SPACE.prefersReducedMotion && tour.i < TOUR.length - 1) {
+    tour.timer = setTimeout(nextTourStep, 8000);
+  }
 }
 function nextTourStep() {
   if (!tour.active) return;
@@ -999,6 +1052,7 @@ function startTour() {
   stopModes();
   tour.active = true; tour.i = 0;
   btnTour.classList.add('active');
+  btnTour.setAttribute('aria-pressed', 'true');
   stageNext.style.display = '';
   stageEl.classList.add('show');
   document.body.classList.add('mode-active');
@@ -1028,6 +1082,7 @@ function startQuiz() {
   quiz.active = true; quiz.idx = 0; quiz.score = 0;
   quiz.order = QUIZ.map((_, i) => i).sort(() => Math.random() - 0.5);
   btnQuiz.classList.add('active');
+  btnQuiz.setAttribute('aria-pressed', 'true');
   stageNext.style.display = 'none';
   stageEl.classList.add('show');
   document.body.classList.add('mode-active');
@@ -1045,6 +1100,7 @@ function quizPick(key) {
       if (quiz.idx >= QUIZ.length) {
         stageText.innerHTML = `<span class="ok">🎉 All done!</span> You found <b>${quiz.score} of ${QUIZ.length}</b>. Want to go again? Tap <b>Quiz</b>.`;
         quiz.active = false; btnQuiz.classList.remove('active');
+        btnQuiz.setAttribute('aria-pressed', 'false');
       } else {
         showQuizQuestion();
       }

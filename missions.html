@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Spacecraft & Missions</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spacecraft &amp; Missions</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css">
+<link rel="stylesheet" href="common.css?v=20260727-2">
 <style>
   /* this page scrolls, unlike the fixed 3D scenes */
   html, body { overflow-x: hidden; overflow-y: auto; }
@@ -17,7 +17,7 @@
     max-width: 640px; margin: 0 auto 44px; text-align: center;
   }
   .lede .info-label { color: var(--accent); }
-  .lede h1 { font-size: 40px; font-weight: 400; font-style: italic; letter-spacing: -0.01em; line-height: 1.05; margin: 8px 0 14px; }
+  .lede h2 { font-size: 40px; font-weight: 400; font-style: italic; letter-spacing: -0.01em; line-height: 1.05; margin: 8px 0 14px; }
   .lede p { font-size: 15px; line-height: 1.6; color: var(--ink-dim); font-weight: 300; }
   .info-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
@@ -37,16 +37,16 @@
   .card .wow b { color: var(--ink); font-weight: 500; }
   .card .wow .lbl { display: block; font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); margin-bottom: 5px; }
   .foot { text-align: center; margin-top: 44px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-faint); }
-  @media (max-width: 620px) { .wrap { padding: 104px 16px 64px; } .lede h1 { font-size: 30px; } }
+  @media (max-width: 620px) { .wrap { padding: 104px 16px 64px; } .lede h2 { font-size: 30px; } }
 </style>
 </head>
 <body>
 
-<canvas id="bg"></canvas>
+<canvas id="bg" aria-hidden="true"></canvas>
 
 <header class="header">
   <div>
-    <h1 class="title">Spacecraft &amp;<br/><em>Missions</em></h1>
+    <h1 class="title">Spacecraft &amp;<br><em>Missions</em></h1>
     <div class="subtitle">Real Robots · Real Journeys · Real Discoveries</div>
   </div>
   <div class="header-meta">
@@ -55,23 +55,23 @@
   </div>
 </header>
 
-<div class="wrap">
+<main class="wrap">
   <div class="lede">
     <div class="info-label">— We didn't just look —</div>
-    <h1>We sent explorers</h1>
+    <h2>We sent explorers</h2>
     <p>People have built robots, telescopes, and spaceships and sent them out to visit the worlds you've been exploring. Here are some of the most amazing real missions — every one of them actually happened.</p>
   </div>
   <div class="grid" id="grid"></div>
   <div class="foot">Every mission here is real · Ask a grown-up to help you look up their latest pictures</div>
-</div>
+</main>
 
-<script src="common.js"></script>
+<script src="common.js?v=20260727-2"></script>
 <script>
 'use strict';
 const MISSIONS = [
   { icon:'🛰️', name:'Voyager 1 & 2', tag:'The farthest travellers', year:'1977', color:'#6ab0ff',
     blurb:'Two probes that flew past the giant planets and kept going. They are now beyond every planet, drifting in the space between the stars. Each carries a golden record of sounds and pictures from Earth.',
-    wow:'Voyager 1 is so far away that its faint radio whisper takes more than <b>22 hours</b> to reach us.' },
+    wow:'Voyager 1 is so far away that its faint radio whisper takes about <b>24 hours</b> to reach us.' },
   { icon:'🤖', name:'Perseverance', tag:'A robot geologist on Mars', year:'2020', color:'#d0674a',
     blurb:'A car-sized rover driving across an ancient dried-up lake on Mars, collecting rocks that might hold clues to tiny life long ago. It even brought a little helicopter called Ingenuity.',
     wow:'Ingenuity was the <b>first machine ever to fly</b> in the sky of another planet.' },
@@ -92,17 +92,17 @@ const MISSIONS = [
     wow:'Their footprints have no wind or rain to erase them — they could last <b>millions of years</b>.' },
   { icon:'✨', name:'Hubble Telescope', tag:'Our eye in the sky', year:'1990', color:'#a9e0e2',
     blurb:'A school-bus-sized telescope orbiting high above Earth for more than 30 years. It has taken some of the most beautiful and famous pictures of stars and galaxies ever made.',
-    wow:'Hubble has made more than <b>1.5 million observations</b> of the universe.' }
+    wow:'Hubble has made more than <b>1.7 million observations</b> of the universe.' }
 ];
 
 const grid = document.getElementById('grid');
 MISSIONS.forEach(m => {
-  const c = document.createElement('div');
+  const c = document.createElement('article');
   c.className = 'card';
   c.style.setProperty('--accent-edge', m.color + '66');
   c.innerHTML = `
     <div class="glow" style="background:${m.color}"></div>
-    <span class="icon">${m.icon}</span><span class="yr">${m.year}</span>
+    <span class="icon" aria-hidden="true">${m.icon}</span><span class="yr">${m.year}</span>
     <h3>${m.name}</h3>
     <div class="tag">${m.tag}</div>
     <p class="blurb">${m.blurb}</p>
@@ -122,7 +122,7 @@ function resize(){
 addEventListener('resize', resize); resize();
 function loop(){
   requestAnimationFrame(loop);
-  const t = performance.now()*0.001;
+  const t = SPACE.prefersReducedMotion ? 0 : performance.now()*0.001;
   ctx.clearRect(0,0,W,H);
   for (const s of stars){
     const tw = 0.5 + 0.5*Math.sin(t*1.4 + s.ph);

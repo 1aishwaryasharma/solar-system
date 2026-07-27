@@ -1,7 +1,13 @@
 # Sol · Terra · Luna
 
-An interactive Three.js study of the Sun, Earth, and Moon, with animated
-orbits, lighting, eclipses, lunar phases, and configurable viewing presets.
+An accessible, responsive collection of interactive solar-system experiences:
+
+- **Light Study** — Sun, Earth, and Moon lighting, phases, and eclipses
+- **Grand Tour** — the planets, dwarf planets, belts, moons, and a comet
+- **Seasons** — Earth's tilt, sunlight, solstices, and equinoxes
+- **Scale Walk** — proportional planetary distances and size analogies
+- **Sky Tonight** — a rough elongation-based guide to planetary visibility
+- **Missions** — notable spacecraft and their discoveries
 
 ## Run locally
 
@@ -13,6 +19,24 @@ python3 -m http.server 8000
 ```
 
 Then visit <http://localhost:8000>.
+
+The 3D scenes load Three.js from unpkg, so they require an internet connection
+even when the site itself is served locally.
+
+## Verify
+
+Run the repository checks with Bun:
+
+```sh
+bun test site.test.ts
+```
+
+For an additional HTML conformance check:
+
+```sh
+bunx html-validate index.html solar-system.html seasons.html \
+  scale-walk.html sky-tonight.html missions.html
+```
 
 ## Technology
 
@@ -34,7 +58,11 @@ complete system legible on one screen. The model uses:
 - Angular eclipse tests that are independent of the compressed display scale
 
 Small effects such as lunar libration, Earth's oblateness, nutation, and
-short-period orbital perturbations are intentionally omitted. Reference values
-come from [NASA Earth facts](https://science.nasa.gov/earth/facts/),
+short-period orbital perturbations are intentionally omitted. The Sky Tonight
+page uses circular mean-orbit approximations and is a general guide rather than
+a location-specific observing forecast.
+
+Reference values come from [NASA Solar System facts](https://science.nasa.gov/solar-system/),
+[NASA Earth facts](https://science.nasa.gov/earth/facts/),
 [NASA Moon facts](https://science.nasa.gov/moon/facts/), and
 [NASA eclipse orbital data](https://eclipse.gsfc.nasa.gov/SEhelp/moonorbit.html).
