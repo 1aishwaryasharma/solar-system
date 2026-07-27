@@ -1109,6 +1109,7 @@ window.addEventListener('resize', () => {
 // ─────────────────────────────────────────────────────────
 const sim = {
   time: 0,           // simulation time
+  visualTime: 0,     // shader/corona time, frozen whenever the simulation is paused
   speed: 1,          // -3..3 (slider) but we use sliderToSpeed
   playing: !SPACE.prefersReducedMotion,
   earthSpinSpeed: 0.6, // one displayed rotation represents one mean Earth day
@@ -1388,6 +1389,7 @@ function animate() {
 
   if (sim.playing) {
     sim.time += dt * sim.speed;
+    sim.visualTime += dt;
     sim.moonPhaseAngle += dt * sim.speed * sim.moonOrbitSpeed;
     sim.sunLongitude += dt * sim.speed * sim.sunYearSpeed;
     sim.moonNodeLongitude += dt * sim.speed * sim.nodePrecessionSpeed;
@@ -1433,13 +1435,12 @@ function animate() {
   applyCamera();
 
   // Animated shader clocks
-  const motionNow = SPACE.prefersReducedMotion ? 0 : now;
-  const t = motionNow * 0.001;
+  const t = SPACE.prefersReducedMotion ? 0 : sim.visualTime;
   sunUniforms.uTime.value = t;
   starUniforms.uTime.value = t;
 
   // Subtle sun "breath" — corona shimmer
-  sunCorona.scale.setScalar(1 + Math.sin(motionNow * 0.0015) * 0.015);
+  sunCorona.scale.setScalar(1 + Math.sin(t * 1.5) * 0.015);
 
   // Night-lights shader needs the sun direction in view space
   _sunDirView.copy(sunGroup.position).normalize()

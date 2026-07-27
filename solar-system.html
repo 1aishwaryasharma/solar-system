@@ -752,7 +752,7 @@ window.addEventListener('resize', () => {
 // 10. STATE + CONTROLS
 // ─────────────────────────────────────────────────────────
 const DAYS_PER_SEC = 18;
-const sim = { timeDays: 0, speed: 1, playing: !SPACE.prefersReducedMotion, showOrbits: true, showLabels: true,
+const sim = { timeDays: 0, visualTime: 0, speed: 1, playing: !SPACE.prefersReducedMotion, showOrbits: true, showLabels: true,
               showBelts: true, trueScale: false, selected: null, follow: false };
 
 const $ = id => document.getElementById(id);
@@ -963,7 +963,10 @@ function animate() {
   const now = performance.now();
   const dt = Math.min((now - lastT) / 1000, 0.05);
   lastT = now;
-  if (sim.playing) sim.timeDays += dt * DAYS_PER_SEC * sim.speed;
+  if (sim.playing) {
+    sim.timeDays += dt * DAYS_PER_SEC * sim.speed;
+    sim.visualTime += dt;
+  }
 
   scaleMix += ((sim.trueScale ? 1 : 0) - scaleMix) * 0.06;
 
@@ -994,11 +997,10 @@ function animate() {
 
   cam.update();
 
-  const motionNow = SPACE.prefersReducedMotion ? 0 : now;
-  const t = motionNow * 0.001;
+  const t = SPACE.prefersReducedMotion ? 0 : sim.visualTime;
   sunUniforms.uTime.value = t;
   starUniforms.uTime.value = t;
-  SUN.corona.scale.setScalar(1 + Math.sin(motionNow * 0.0015) * 0.015);
+  SUN.corona.scale.setScalar(1 + Math.sin(t * 1.5) * 0.015);
 
   SPACE.projectToScreen(SUN.group, labels.sun, camera, -SUN_DISPLAY_R * 14, sim.showLabels);
   WORLDS.forEach(w => SPACE.projectToScreen(w.holder, labels[w.key], camera, -currentRadius(w) * 14 - 14, sim.showLabels));

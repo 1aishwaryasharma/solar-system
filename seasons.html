@@ -253,7 +253,13 @@ addEventListener('resize', () => {
 });
 
 // ── state / UI ──
-const state = { theta: 0, playing: !SPACE.prefersReducedMotion, showAxis: true, showRays: true };
+const state = {
+  theta: 0,
+  motionTime: 0,
+  playing: !SPACE.prefersReducedMotion,
+  showAxis: true,
+  showRays: true
+};
 const playBtn=document.getElementById('play-btn'), playIcon=document.getElementById('play-icon');
 const slider=document.getElementById('year-slider');
 const PLAY='<path d="M2 1 L10 6 L2 11 Z"/>', PAUSE='<path d="M2 1 L4.5 1 L4.5 11 L2 11 Z M7.5 1 L10 1 L10 11 L7.5 11 Z"/>';
@@ -309,13 +315,17 @@ let last=performance.now();
 function animate(){
   requestAnimationFrame(animate);
   const now=performance.now(); const dt=Math.min((now-last)/1000,0.05); last=now;
-  const motionNow = SPACE.prefersReducedMotion ? 0 : now;
-  if (state.playing){ state.theta=(state.theta+dt*22)%360; slider.value=state.theta; }
+  if (state.playing){
+    state.theta=(state.theta+dt*22)%360;
+    state.motionTime+=dt;
+    slider.value=state.theta;
+  }
+  const motionTime = SPACE.prefersReducedMotion ? 0 : state.motionTime;
   const a=DEG(state.theta);
 
   // Earth position + fixed-in-space tilt; spin for day/night
   earthPivot.position.set(Math.cos(a)*ORBIT_R, 0, Math.sin(a)*ORBIT_R);
-  earth.rotation.y = motionNow*0.0006; // steady visible spin (day/night)
+  earth.rotation.y = motionTime*0.6; // steady visible spin (day/night)
 
   // sunlight rays from Sun toward Earth's lit side
   _sunDir.copy(earthPivot.position).multiplyScalar(-1).normalize();
@@ -335,8 +345,8 @@ function animate(){
   // Keep a stable, Sun-centred reference frame so only Earth moves around the orbit.
   cam.update();
 
-  SUN.uniforms.uTime.value = motionNow*0.001;
-  if (starU) starU.uTime.value = motionNow*0.001;
+  SUN.uniforms.uTime.value = motionTime;
+  if (starU) starU.uTime.value = motionTime;
 
   // labels
   MARKERS.forEach(m=>{
