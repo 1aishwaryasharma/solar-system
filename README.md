@@ -43,8 +43,10 @@ bunx html-validate index.html solar-system.html seasons.html \
 - Three.js 0.128.0
 - WebGL and custom GLSL shaders
 - Vanilla HTML, CSS, and JavaScript
-- Earth surface, normal, specular, and night-light maps from the
-  [Three.js planet texture examples](https://threejs.org/examples/textures/planets/)
+- Earth day (surface), night-lights, normal, and specular maps from the
+  [three.js example planet textures](https://github.com/mrdoob/three.js/tree/dev/examples/textures/planets)
+  (three.js is MIT-licensed), derived from NASA's
+  [Visible Earth "Blue Marble" planet textures](https://visibleearth.nasa.gov/collection/1484/planet-textures)
 
 ## Scientific model
 
@@ -65,4 +67,22 @@ a location-specific observing forecast.
 Reference values come from [NASA Solar System facts](https://science.nasa.gov/solar-system/),
 [NASA Earth facts](https://science.nasa.gov/earth/facts/),
 [NASA Moon facts](https://science.nasa.gov/moon/facts/), and
-[NASA eclipse orbital data](https://eclipse.gsfc.nasa.gov/SEhelp/moonorbit.html).
+[NASA eclipse orbital data](https://eclipse.gsfc.nasa.gov/SEhelp/moonorbit.html)
+(Fred Espenak, NASA Goddard Space Flight Center).
+
+## Credits
+
+- 3D rendering: [three.js](https://github.com/mrdoob/three.js) (MIT License)
+- Earth textures: [three.js example planet textures](https://github.com/mrdoob/three.js/tree/dev/examples/textures/planets),
+  derived from NASA [Visible Earth — Blue Marble](https://visibleearth.nasa.gov/collection/1484/planet-textures)
+- Reference data: NASA [Solar System](https://science.nasa.gov/solar-system/),
+  [Earth facts](https://science.nasa.gov/earth/facts/),
+  [Moon facts](https://science.nasa.gov/moon/facts/), and
+  [eclipse / Moon-orbit data](https://eclipse.gsfc.nasa.gov/SEhelp/moonorbit.html)
+
+## License
+
+Original code (the HTML, CSS, JavaScript, and shaders in this repository) is
+released under the [MIT License](LICENSE). Bundled third-party assets in
+`assets/` retain the terms of their original sources, noted under Credits and in
+the `LICENSE` file.
