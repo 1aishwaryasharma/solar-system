@@ -39,7 +39,15 @@
   }
   .analogy strong { color: var(--accent); font-weight: 500; }
   .analogy .fact-tag { display:block; font-family:'Fragment Mono',monospace; font-size:9px; letter-spacing:0.2em; text-transform:uppercase; color:var(--accent-warm); margin-bottom:6px; }
-  .stops { position: fixed; top: 50%; right: 24px; transform: translateY(-50%); display: flex; flex-direction: column; gap: 3px; z-index: 10; max-height: 84vh; overflow: auto; }
+  /* the planet label doubles as a locator pin: a small caret under the box points down at the planet */
+  .label-pin::after {
+    content: ''; position: absolute; left: 50%; top: 100%; margin-top: 3px;
+    transform: translateX(-50%);
+    border: 5px solid transparent; border-top-color: currentColor; border-bottom: 0;
+    filter: drop-shadow(0 0 3px currentColor);
+  }
+  .stops { position: fixed; top: 50%; right: 24px; transform: translateY(-50%); display: flex; flex-direction: column; gap: 3px; z-index: 10; max-height: 84vh; overflow: auto; scrollbar-width: none; -ms-overflow-style: none; }
+  .stops::-webkit-scrollbar { display: none; }
   .stop-btn { background: var(--panel); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--line); border-radius: 2px; padding: 8px 14px; width: 168px; color: var(--ink); font-family: 'Newsreader', serif; font-size: 13px; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 11px; transition: all 0.2s; }
   .stop-btn:hover { background: var(--panel-bright); border-color: rgba(244,197,96,0.3); transform: translateX(-3px); }
   .stop-btn.active { border-color: var(--accent); background: rgba(244,197,96,0.08); }
@@ -174,11 +182,11 @@ PLANETS.forEach(p => {
     new THREE.MeshStandardMaterial({ color: p.dot, roughness: 1, metalness: 0, emissive: new THREE.Color(p.dot).multiplyScalar(0.04) }));
   mesh.position.set(p.x, 0, 0);
   scene.add(mesh); p.mesh = mesh;
-  // a faint tick marker so far planets are findable
-  const halo = new THREE.Mesh(new THREE.RingGeometry(p.dispR*1.6, p.dispR*1.75, 40),
-    new THREE.MeshBasicMaterial({ color: p.dot, transparent: true, opacity: 0.35, side: THREE.DoubleSide }));
-  halo.position.copy(mesh.position); halo.lookAt(0,1,0); scene.add(halo);
+  // the floating label doubles as the findability marker: a pin/caret that
+  // points down at the planet (see .label-pin) — so far specks stay locatable
+  // without ringing every planet like Saturn
   p.label = makeLabel(p.name, p.dot);
+  p.label.classList.add('label-pin');
 });
 
 let composer=null;
