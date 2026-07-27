@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Spacecraft & Missions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  /* this page scrolls, unlike the fixed 3D scenes */
+  html, body { overflow-x: hidden; overflow-y: auto; }
+  #bg { position: fixed; inset: 0; z-index: 0; }
+  .wrap { position: relative; z-index: 1; max-width: 1120px; margin: 0 auto; padding: 128px 28px 80px; }
+  .lede {
+    max-width: 640px; margin: 0 auto 44px; text-align: center;
+  }
+  .lede .info-label { color: var(--accent); }
+  .lede h1 { font-size: 40px; font-weight: 400; font-style: italic; letter-spacing: -0.01em; line-height: 1.05; margin: 8px 0 14px; }
+  .lede p { font-size: 15px; line-height: 1.6; color: var(--ink-dim); font-weight: 300; }
+  .info-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+  .card {
+    background: var(--panel); backdrop-filter: blur(20px) saturate(140%); -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid var(--line); border-radius: 3px; padding: 22px 22px 20px; position: relative; overflow: hidden;
+    transition: transform 0.25s ease, border-color 0.25s ease;
+  }
+  .card:hover { transform: translateY(-4px); border-color: var(--accent-edge, rgba(244,197,96,0.4)); }
+  .card .glow { position: absolute; top: -40px; right: -40px; width: 120px; height: 120px; border-radius: 50%; filter: blur(30px); opacity: 0.35; }
+  .card .icon { font-size: 30px; line-height: 1; }
+  .card .yr { float: right; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: var(--ink-faint); margin-top: 8px; }
+  .card h3 { font-size: 20px; font-weight: 400; margin: 14px 0 2px; }
+  .card .tag { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-warm); }
+  .card .blurb { font-size: 13.5px; line-height: 1.55; color: var(--ink-dim); font-weight: 300; margin: 12px 0 0; }
+  .card .wow { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 12.5px; line-height: 1.5; color: var(--ink-dim); }
+  .card .wow b { color: var(--ink); font-weight: 500; }
+  .card .wow .lbl { display: block; font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); margin-bottom: 5px; }
+  .foot { text-align: center; margin-top: 44px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-faint); }
+  @media (max-width: 620px) { .wrap { padding: 104px 16px 64px; } .lede h1 { font-size: 30px; } }
+</style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+
+<header class="header">
+  <div>
+    <h1 class="title">Spacecraft &amp;<br/><em>Missions</em></h1>
+    <div class="subtitle">Real Robots · Real Journeys · Real Discoveries</div>
+  </div>
+  <div class="header-meta">
+    <div>Explorers · <span>Human-made</span></div>
+    <div>Reach · <span>Moon to interstellar space</span></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="lede">
+    <div class="info-label">— We didn't just look —</div>
+    <h1>We sent explorers</h1>
+    <p>People have built robots, telescopes, and spaceships and sent them out to visit the worlds you've been exploring. Here are some of the most amazing real missions — every one of them actually happened.</p>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="foot">Every mission here is real · Ask a grown-up to help you look up their latest pictures</div>
+</div>
+
+<script src="common.js"></script>
+<script>
+'use strict';
+const MISSIONS = [
+  { icon:'🛰️', name:'Voyager 1 & 2', tag:'The farthest travellers', year:'1977', color:'#6ab0ff',
+    blurb:'Two probes that flew past the giant planets and kept going. They are now beyond every planet, drifting in the space between the stars. Each carries a golden record of sounds and pictures from Earth.',
+    wow:'Voyager 1 is so far away that its faint radio whisper takes more than <b>22 hours</b> to reach us.' },
+  { icon:'🤖', name:'Perseverance', tag:'A robot geologist on Mars', year:'2020', color:'#d0674a',
+    blurb:'A car-sized rover driving across an ancient dried-up lake on Mars, collecting rocks that might hold clues to tiny life long ago. It even brought a little helicopter called Ingenuity.',
+    wow:'Ingenuity was the <b>first machine ever to fly</b> in the sky of another planet.' },
+  { icon:'🔭', name:'James Webb Telescope', tag:'A time machine for light', year:'2021', color:'#f4c560',
+    blurb:'A giant telescope with a golden mirror, parked far from Earth. It sees heat (infrared) light, letting it peer through dust and spot galaxies from when the universe was very young.',
+    wow:'Webb can catch light that left its stars <b>over 13 billion years ago</b>.' },
+  { icon:'🪐', name:'Cassini', tag:"Saturn's explorer", year:'1997', color:'#e6d3a0',
+    blurb:'A spacecraft that circled Saturn for 13 years, studying its rings and many moons, and dropped a little probe onto the cloudy moon Titan. It finished by diving into Saturn itself.',
+    wow:'It discovered that Saturn\'s icy moon Enceladus shoots <b>giant fountains of water</b> into space.' },
+  { icon:'🚀', name:'New Horizons', tag:'The Pluto flyby', year:'2006', color:'#c9b8a0',
+    blurb:'A fast little probe about the size of a piano. After nine years of travel it zoomed past Pluto in 2015 and gave us our very first close-up photographs of that faraway world.',
+    wow:'It flew past Pluto at over 50,000 km/h and spotted a huge <b>heart-shaped patch of ice</b>.' },
+  { icon:'☀️', name:'Parker Solar Probe', tag:'The Sun-toucher', year:'2018', color:'#e89248',
+    blurb:'A spacecraft that flies closer to the Sun than anything before it, hiding behind a special heat shield so it does not melt. It studies the Sun\'s scorching outer air.',
+    wow:'It flew through the Sun\'s outer atmosphere — the first craft ever to <b>"touch" the Sun</b>.' },
+  { icon:'🌕', name:'Apollo 11', tag:'First footsteps on the Moon', year:'1969', color:'#c9c5b8',
+    blurb:'The mission that carried the first people to walk on the Moon. Two astronauts stepped onto the dusty grey surface while a third orbited above in the spacecraft.',
+    wow:'Their footprints have no wind or rain to erase them — they could last <b>millions of years</b>.' },
+  { icon:'✨', name:'Hubble Telescope', tag:'Our eye in the sky', year:'1990', color:'#a9e0e2',
+    blurb:'A school-bus-sized telescope orbiting high above Earth for more than 30 years. It has taken some of the most beautiful and famous pictures of stars and galaxies ever made.',
+    wow:'Hubble has made more than <b>1.5 million observations</b> of the universe.' }
+];
+
+const grid = document.getElementById('grid');
+MISSIONS.forEach(m => {
+  const c = document.createElement('div');
+  c.className = 'card';
+  c.style.setProperty('--accent-edge', m.color + '66');
+  c.innerHTML = `
+    <div class="glow" style="background:${m.color}"></div>
+    <span class="icon">${m.icon}</span><span class="yr">${m.year}</span>
+    <h3>${m.name}</h3>
+    <div class="tag">${m.tag}</div>
+    <p class="blurb">${m.blurb}</p>
+    <div class="wow"><span class="lbl">✦ Wow</span>${m.wow}</div>`;
+  grid.appendChild(c);
+});
+
+// subtle drifting starfield background
+const canvas = document.getElementById('bg'), ctx = canvas.getContext('2d');
+let W, H, DPR, stars = [];
+function resize(){
+  DPR = Math.min(devicePixelRatio||1, 2); W = innerWidth; H = innerHeight;
+  canvas.width = W*DPR; canvas.height = H*DPR; canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  if (!stars.length) for (let i=0;i<200;i++) stars.push({ x:Math.random(), y:Math.random(), r:Math.random()<0.12?1.7:0.8, ph:Math.random()*6.28, tint:Math.random()<0.2?'244,197,96':'232,236,244' });
+}
+addEventListener('resize', resize); resize();
+function loop(){
+  requestAnimationFrame(loop);
+  const t = performance.now()*0.001;
+  ctx.clearRect(0,0,W,H);
+  for (const s of stars){
+    const tw = 0.5 + 0.5*Math.sin(t*1.4 + s.ph);
+    ctx.fillStyle = `rgba(${s.tint},${0.08 + 0.16*tw})`;
+    ctx.beginPath(); ctx.arc(s.x*W, s.y*H, s.r, 0, 6.283); ctx.fill();
+  }
+}
+loop();
+SPACE.buildNav('missions');
+</script>
+</body>
+</html>

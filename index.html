@@ -7,122 +7,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
 <style>
-  :root {
-    --bg: #050810;
-    --ink: #e8ecf4;
-    --ink-dim: #8893a8;
-    --ink-faint: #4a5468;
-    --accent: #f4c560;
-    --accent-warm: #e89248;
-    --accent-cool: #6ab0ff;
-    --line: rgba(232, 236, 244, 0.08);
-    --panel: rgba(8, 12, 22, 0.72);
-    --panel-bright: rgba(15, 22, 38, 0.85);
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  html, body {
-    height: 100%;
-    overflow: hidden;
-    background: var(--bg);
-    color: var(--ink);
-    font-family: 'Fraunces', Georgia, serif;
-    font-feature-settings: 'ss01', 'ss02';
-    -webkit-font-smoothing: antialiased;
-  }
-
-  #canvas-container {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-  }
-
-  canvas { display: block; }
-
-  /* ──── Header ──── */
-  .header {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    padding: 24px 32px;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    z-index: 10;
-    pointer-events: none;
-  }
-
-  .title {
-    font-size: 22px;
-    font-weight: 400;
-    letter-spacing: 0.02em;
-    line-height: 1.1;
-  }
-  .title em {
-    font-style: italic;
-    color: var(--accent);
-  }
-  .subtitle {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--ink-dim);
-    margin-top: 6px;
-  }
-
-  .header-meta {
-    text-align: right;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--ink-dim);
-    line-height: 1.6;
-  }
-  .header-meta span { color: var(--accent); }
-
-  /* ──── Info Panel ──── */
-  .info-panel {
-    position: fixed;
-    top: 96px;
-    left: 24px;
-    width: 320px;
-    max-width: calc(100vw - 48px);
-    background: var(--panel);
-    backdrop-filter: blur(20px) saturate(140%);
-    -webkit-backdrop-filter: blur(20px) saturate(140%);
-    border: 1px solid var(--line);
-    border-radius: 2px;
-    padding: 22px 24px;
-    z-index: 10;
-  }
-
-  .info-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin-bottom: 10px;
-  }
-  .info-title {
-    font-size: 24px;
-    font-weight: 400;
-    letter-spacing: -0.01em;
-    line-height: 1.15;
-    margin-bottom: 12px;
-    font-style: italic;
-  }
-  .info-body {
-    font-size: 14px;
-    line-height: 1.55;
-    color: var(--ink-dim);
-    font-weight: 300;
-  }
-  .info-body strong { color: var(--ink); font-weight: 500; }
-
+  /* Shared design tokens & component styles live in common.css.
+     Only page-specific rules for the light study remain here. */
   .info-fact {
     margin-top: 14px;
     padding-top: 12px;
@@ -197,187 +85,10 @@
     color: var(--accent-warm);
   }
 
-  /* ──── Bottom Controls ──── */
-  .controls {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--panel);
-    backdrop-filter: blur(20px) saturate(140%);
-    -webkit-backdrop-filter: blur(20px) saturate(140%);
-    border: 1px solid var(--line);
-    border-radius: 2px;
-    padding: 14px 22px;
-    display: flex;
-    align-items: center;
-    gap: 22px;
-    z-index: 10;
-    max-width: calc(100vw - 32px);
-  }
-
-  .play-btn {
-    background: var(--accent);
-    color: #1a1408;
-    border: none;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-    flex-shrink: 0;
-  }
-  .play-btn:hover {
-    background: #ffd47a;
-    transform: scale(1.05);
-  }
-  .play-btn svg { width: 14px; height: 14px; }
-
-  .speed-group {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .speed-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--ink-dim);
-  }
-  .speed-slider {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 140px;
-    height: 2px;
-    background: rgba(232, 236, 244, 0.15);
-    outline: none;
-    border-radius: 0;
-  }
-  .speed-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: var(--accent);
-    cursor: pointer;
-    border: 2px solid var(--bg);
-    box-shadow: 0 0 0 1px var(--accent);
-  }
-  .speed-slider::-moz-range-thumb {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: var(--accent);
-    cursor: pointer;
-    border: 2px solid var(--bg);
-  }
-
-  .speed-value {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    color: var(--ink);
-    min-width: 50px;
-  }
-
-  .divider {
-    width: 1px;
-    height: 24px;
-    background: var(--line);
-  }
-
-  .toggle-group { display: flex; gap: 8px; }
-  .toggle-btn {
-    background: transparent;
-    border: 1px solid var(--line);
-    color: var(--ink-dim);
-    padding: 7px 12px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    border-radius: 2px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .toggle-btn:hover { color: var(--ink); border-color: rgba(232,236,244,0.2); }
-  .toggle-btn.active {
-    color: var(--accent);
-    border-color: rgba(244, 197, 96, 0.4);
-    background: rgba(244, 197, 96, 0.05);
-  }
-
-  /* ──── Hint ──── */
-  .hint {
-    position: fixed;
-    bottom: 24px;
-    left: 24px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--ink-faint);
-    z-index: 10;
-    line-height: 1.8;
-  }
-  .hint .key {
-    display: inline-block;
-    padding: 2px 6px;
-    border: 1px solid var(--line);
-    border-radius: 2px;
-    margin: 0 4px;
-    color: var(--ink-dim);
-  }
-
-  /* ──── Tooltip labels ──── */
-  .label-3d {
-    position: absolute;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--ink);
-    pointer-events: none;
-    transform: translate(-50%, -50%);
-    padding: 4px 8px;
-    background: rgba(0,0,0,0.4);
-    border: 1px solid var(--line);
-    border-radius: 2px;
-    white-space: nowrap;
-    z-index: 5;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    transition: opacity 0.3s;
-  }
+  /* ──── Tooltip label colour variants (base .label-3d is in common.css) ──── */
   .label-3d.sun { color: var(--accent); border-color: rgba(244, 197, 96, 0.3); }
   .label-3d.earth { color: var(--accent-cool); border-color: rgba(106, 176, 255, 0.3); }
   .label-3d.moon { color: #c9c5b8; border-color: rgba(201, 197, 184, 0.3); }
-
-  /* ──── Loading ──── */
-  .loader {
-    position: fixed;
-    inset: 0;
-    background: var(--bg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 100;
-    transition: opacity 0.8s;
-  }
-  .loader.hidden { opacity: 0; pointer-events: none; }
-  .loader-text {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.3em;
-    text-transform: uppercase;
-    color: var(--accent);
-    animation: pulse 1.4s ease-in-out infinite;
-  }
-  @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
 
   /* ──── Mobile ──── */
   @media (max-width: 768px) {
@@ -428,11 +139,13 @@
   <div>
     <h1 class="title">Sol · Terra · Luna<br/><em>a study of light</em></h1>
     <div class="subtitle">Interactive · Three Bodies · One Star</div>
+    <a class="nav-link" href="solar-system.html">The Sun &amp; its planets — grand tour ›</a>
   </div>
   <div class="header-meta">
     <div>Earth Day · <span id="meta-day">0.00</span></div>
     <div>Moon Phase · <span id="meta-phase">New</span></div>
     <div>Geometry · <span id="meta-event">Aligned</span></div>
+    <div>Model · <span>Earth-centered · not to scale</span></div>
   </div>
 </header>
 
@@ -486,7 +199,6 @@
   <div class="toggle-group">
     <button class="toggle-btn active" id="toggle-orbits">Orbits</button>
     <button class="toggle-btn active" id="toggle-labels">Labels</button>
-    <button class="toggle-btn active" id="toggle-clouds">Clouds</button>
     <button class="toggle-btn" id="toggle-axis">Axis</button>
   </div>
 </div>
@@ -499,6 +211,7 @@
 <div class="label-3d earth" id="label-earth">Earth</div>
 <div class="label-3d moon" id="label-moon">Moon</div>
 
+<script src="common.js"></script>
 <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
 <script src="https://unpkg.com/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
 <script src="https://unpkg.com/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
@@ -534,14 +247,22 @@ renderer.toneMappingExposure = 1.1;
 container.appendChild(renderer.domElement);
 
 // ─────────────────────────────────────────────────────────
-// 2. SCALES (cartoon, not real — real is unwatchable)
+// 2. PHYSICAL RATIOS AND DISPLAY SCALES
+// Radii/distances are compressed so all three bodies remain visible. Angular
+// relationships, inclinations, eccentricity, and relative periods use accepted
+// astronomical values.
 // ─────────────────────────────────────────────────────────
 const SUN_RADIUS    = 3.5;
 const EARTH_RADIUS  = 1.0;
-const MOON_RADIUS   = 0.27;
-const SUN_DISTANCE  = 32;     // sun is at -X
+const MOON_RADIUS   = 0.2727;
+const SUN_DISTANCE  = 32;     // compressed display distance
 const MOON_DISTANCE = 4.2;
-const EARTH_TILT    = 23.5 * Math.PI / 180;
+const EARTH_TILT = THREE.MathUtils.degToRad(23.4393);
+const MOON_ORBIT_INCLINATION = THREE.MathUtils.degToRad(5.145);
+const MOON_ORBIT_ECCENTRICITY = 0.0549;
+const EARTH_DAYS_PER_YEAR = 365.256;
+const EARTH_DAYS_PER_MOON_ORBIT = 27.321661;
+const NODE_PRECESSION_YEARS = 18.6;
 
 // ─────────────────────────────────────────────────────────
 // 3. GLSL NOISE (simplex, Ashima Arts / Stefan Gustavson)
@@ -793,7 +514,7 @@ scene.add(sunLight.target);
 scene.add(new THREE.AmbientLight(0x223355, 0.18));
 
 // ─────────────────────────────────────────────────────────
-// 6. EARTH (procedural textures: day, night lights, clouds)
+// 6. EARTH (procedural day surface and night lights)
 // ─────────────────────────────────────────────────────────
 // shared continent shapes — used for both land masses and city lights
 const CONTINENTS = [
@@ -828,9 +549,28 @@ const CONTINENTS = [
   ]}
 ];
 
+function traceContinentPath(ctx, cont) {
+  const pts = cont.pts.map(([x, y]) => [cont.cx + x, cont.cy + y]);
+  const last = pts[pts.length - 1];
+  const first = pts[0];
+  ctx.beginPath();
+  ctx.moveTo((last[0] + first[0]) / 2, (last[1] + first[1]) / 2);
+  pts.forEach((point, i) => {
+    const next = pts[(i + 1) % pts.length];
+    ctx.quadraticCurveTo(
+      point[0], point[1],
+      (point[0] + next[0]) / 2,
+      (point[1] + next[1]) / 2
+    );
+  });
+  ctx.closePath();
+}
+
 function createEarthTexture() {
+  const W = 2048;
+  const H = 1024;
   const c = document.createElement('canvas');
-  c.width = 2048; c.height = 1024;
+  c.width = W; c.height = H;
   const ctx = c.getContext('2d');
 
   // Ocean — gradient with subtle latitude variation
@@ -841,54 +581,94 @@ function createEarthTexture() {
   og.addColorStop(0.7,  '#0d3a6b');
   og.addColorStop(1,    '#0a2540');
   ctx.fillStyle = og;
-  ctx.fillRect(0, 0, 2048, 1024);
+  ctx.fillRect(0, 0, W, H);
 
   // Subtle ocean noise
   for (let i = 0; i < 5000; i++) {
-    const x = Math.random() * 2048;
-    const y = Math.random() * 1024;
+    const x = Math.random() * W;
+    const y = Math.random() * H;
     const a = Math.random() * 0.08;
     ctx.fillStyle = `rgba(255,255,255,${a})`;
     ctx.fillRect(x, y, 1, 1);
   }
 
-  // Continents — compound blobs with a soft coastal shadow
+  // Continents — softened coastlines with shallow-water edges and restrained
+  // inland variation, keeping the map readable without looking like cut-outs.
   CONTINENTS.forEach(cont => {
+    ctx.save();
+    traceContinentPath(ctx, cont);
     ctx.fillStyle = cont.color;
-    ctx.beginPath();
-    cont.pts.forEach(([px, py], i) => {
-      const x = cont.cx + px;
-      const y = cont.cy + py;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle = 'rgba(5, 20, 35, 0.35)';
-    ctx.lineWidth = 5;
+
+    ctx.strokeStyle = 'rgba(75, 145, 155, 0.32)';
+    ctx.lineWidth = 8;
     ctx.stroke();
+
+    ctx.clip();
+    for (let i = 0; i < 140; i++) {
+      const x = cont.cx + (Math.random() - 0.5) * 330;
+      const y = cont.cy + (Math.random() - 0.5) * 260;
+      ctx.fillStyle = Math.random() < 0.55
+        ? `rgba(15,24,12,${0.025 + Math.random() * 0.055})`
+        : `rgba(205,190,125,${0.02 + Math.random() * 0.045})`;
+      ctx.beginPath();
+      ctx.ellipse(x, y, 5 + Math.random() * 20, 2 + Math.random() * 8, Math.random() * Math.PI, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
   });
 
-  // Land texture speckle
-  for (let i = 0; i < 6000; i++) {
-    const x = Math.random() * 2048;
-    const y = Math.random() * 1024;
-    ctx.fillStyle = Math.random() < 0.5
-      ? `rgba(0,0,0,${Math.random() * 0.06})`
-      : `rgba(255,255,220,${Math.random() * 0.04})`;
-    ctx.fillRect(x, y, 2, 2);
-  }
+  // Irregular, periodic polar boundaries avoid the hard rings and pinched
+  // "football" points produced by straight strips on an equirectangular map.
+  const northEdge = x => 43
+    + Math.sin((x / W) * Math.PI * 2 * 3) * 10
+    + Math.sin((x / W) * Math.PI * 2 * 7 + 0.8) * 5;
+  const southEdge = x => 936
+    + Math.sin((x / W) * Math.PI * 2 * 2 + 0.4) * 15
+    + Math.sin((x / W) * Math.PI * 2 * 5) * 7;
 
-  // Antarctica (bottom strip)
-  ctx.fillStyle = '#dde4ec';
-  ctx.fillRect(0, 950, 2048, 74);
+  ctx.fillStyle = 'rgba(225,234,242,0.76)';
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(W, 0);
+  for (let x = W; x >= 0; x -= 8) ctx.lineTo(x, northEdge(x));
+  ctx.closePath();
+  ctx.fill();
 
-  // Polar ice caps (top)
-  ctx.fillStyle = 'rgba(220,228,236,0.6)';
-  ctx.fillRect(0, 0, 2048, 40);
+  ctx.fillStyle = '#dce6ee';
+  ctx.beginPath();
+  ctx.moveTo(0, H);
+  ctx.lineTo(W, H);
+  for (let x = W; x >= 0; x -= 8) ctx.lineTo(x, southEdge(x));
+  ctx.closePath();
+  ctx.fill();
 
   const tex = new THREE.CanvasTexture(c);
   tex.encoding = THREE.sRGBEncoding;
+  tex.anisotropy = 8;
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.ClampToEdgeWrapping;
+  return tex;
+}
+
+// A neutral relief map keeps continents tactile without turning color changes
+// (especially the polar ice) into artificial ridges.
+function createEarthBumpTexture() {
+  const c = document.createElement('canvas');
+  c.width = 2048; c.height = 1024;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#777';
+  ctx.fillRect(0, 0, c.width, c.height);
+
+  CONTINENTS.forEach(cont => {
+    ctx.fillStyle = '#999';
+    traceContinentPath(ctx, cont);
+    ctx.fill();
+  });
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.ClampToEdgeWrapping;
   tex.anisotropy = 8;
   return tex;
 }
@@ -922,87 +702,122 @@ function createNightTexture() {
   });
 
   const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.ClampToEdgeWrapping;
   return tex;
 }
 
-// soft cumulus puffs on a transparent canvas → independent cloud sphere
-function createCloudTexture() {
-  const c = document.createElement('canvas');
-  c.width = 2048; c.height = 1024;
-  const ctx = c.getContext('2d');
+function createMoonTextures() {
+  const W = 1024;
+  const H = 512;
+  const colorCanvas = document.createElement('canvas');
+  const bumpCanvas = document.createElement('canvas');
+  colorCanvas.width = bumpCanvas.width = W;
+  colorCanvas.height = bumpCanvas.height = H;
+  const ctx = colorCanvas.getContext('2d');
+  const bumpCtx = bumpCanvas.getContext('2d');
 
-  for (let i = 0; i < 70; i++) {
-    const x = Math.random() * 2048;
-    const y = 120 + Math.random() * 784;
-    const puffs = 4 + Math.floor(Math.random() * 8);
-    for (let j = 0; j < puffs; j++) {
-      const px = x + (Math.random() - 0.5) * 240;
-      const py = y + (Math.random() - 0.5) * 70;
-      const r = 28 + Math.random() * 70;
-      const g = ctx.createRadialGradient(px, py, 0, px, py, r);
-      g.addColorStop(0, 'rgba(255,255,255,0.5)');
-      g.addColorStop(0.6, 'rgba(255,255,255,0.22)');
-      g.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = g;
+  const base = ctx.createLinearGradient(0, 0, 0, H);
+  base.addColorStop(0, '#858582');
+  base.addColorStop(0.22, '#aaa9a3');
+  base.addColorStop(0.5, '#b8b6ae');
+  base.addColorStop(0.78, '#aaa9a3');
+  base.addColorStop(1, '#858582');
+  ctx.fillStyle = base;
+  ctx.fillRect(0, 0, W, H);
+  bumpCtx.fillStyle = '#808080';
+  bumpCtx.fillRect(0, 0, W, H);
+
+  // Repeatable surface detail keeps the Moon stable between reloads.
+  let seed = 7419;
+  const random = () => {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 4294967296;
+  };
+
+  for (let i = 0; i < 3500; i++) {
+    const shade = 118 + Math.floor(random() * 48);
+    ctx.fillStyle = `rgba(${shade},${shade},${shade - 3},0.11)`;
+    ctx.fillRect(random() * W, random() * H, 1.2, 1.2);
+  }
+
+  // A restrained set of fixed maria reads more like the real lunar near side
+  // than a different collection of random dark circles on every load.
+  const maria = [
+    [470, 218, 108, 62], [585, 190, 72, 48], [645, 278, 92, 55],
+    [370, 290, 64, 42], [530, 330, 74, 38], [750, 205, 48, 34]
+  ];
+  maria.forEach(([x, y, rx, ry]) => {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(1, ry / rx);
+    const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
+    grad.addColorStop(0, 'rgba(63,64,63,0.5)');
+    grad.addColorStop(0.72, 'rgba(76,77,75,0.34)');
+    grad.addColorStop(1, 'rgba(90,90,87,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(0, 0, rx, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  });
+
+  for (let i = 0; i < 260; i++) {
+    const x = random() * W;
+    const y = 14 + random() * (H - 28);
+    const r = 2 + random() * random() * 27;
+    [-W, 0, W].forEach(offset => {
+      const cx = x + offset;
+      const colorGrad = ctx.createRadialGradient(cx - r * 0.12, y - r * 0.12, 0, cx, y, r);
+      colorGrad.addColorStop(0, 'rgba(60,60,58,0.42)');
+      colorGrad.addColorStop(0.62, 'rgba(83,83,80,0.22)');
+      colorGrad.addColorStop(0.78, 'rgba(220,218,205,0.26)');
+      colorGrad.addColorStop(1, 'rgba(150,148,142,0)');
+      ctx.fillStyle = colorGrad;
       ctx.beginPath();
-      ctx.arc(px, py, r, 0, Math.PI * 2);
+      ctx.arc(cx, y, r, 0, Math.PI * 2);
       ctx.fill();
-    }
+
+      const bumpGrad = bumpCtx.createRadialGradient(cx, y, 0, cx, y, r);
+      bumpGrad.addColorStop(0, '#686868');
+      bumpGrad.addColorStop(0.62, '#747474');
+      bumpGrad.addColorStop(0.78, '#999999');
+      bumpGrad.addColorStop(1, '#808080');
+      bumpCtx.fillStyle = bumpGrad;
+      bumpCtx.beginPath();
+      bumpCtx.arc(cx, y, r, 0, Math.PI * 2);
+      bumpCtx.fill();
+    });
   }
 
-  const tex = new THREE.CanvasTexture(c);
-  return tex;
+  const color = new THREE.CanvasTexture(colorCanvas);
+  const bump = new THREE.CanvasTexture(bumpCanvas);
+  color.encoding = THREE.sRGBEncoding;
+  [color, bump].forEach(tex => {
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.anisotropy = 8;
+  });
+  return { color, bump };
 }
 
-function createMoonTexture() {
-  const c = document.createElement('canvas');
-  c.width = 1024; c.height = 512;
-  const ctx = c.getContext('2d');
-  // base
-  const g = ctx.createLinearGradient(0, 0, 0, 512);
-  g.addColorStop(0, '#9c958a');
-  g.addColorStop(0.5, '#b8b0a3');
-  g.addColorStop(1, '#9c958a');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, 1024, 512);
+const textureLoader = new THREE.TextureLoader();
 
-  // craters (random circles, varying sizes)
-  for (let i = 0; i < 220; i++) {
-    const x = Math.random() * 1024;
-    const y = Math.random() * 512;
-    const r = 3 + Math.random() * Math.random() * 30;
-    const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
-    grad.addColorStop(0, 'rgba(60,55,48,0.5)');
-    grad.addColorStop(0.7, 'rgba(140,132,120,0.2)');
-    grad.addColorStop(1, 'rgba(180,172,160,0)');
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI*2);
-    ctx.fill();
-  }
-  // dark maria (large dark patches)
-  for (let i = 0; i < 8; i++) {
-    const x = Math.random() * 1024;
-    const y = 100 + Math.random() * 312;
-    const r = 40 + Math.random() * 80;
-    const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
-    grad.addColorStop(0, 'rgba(70,65,58,0.55)');
-    grad.addColorStop(1, 'rgba(70,65,58,0)');
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI*2);
-    ctx.fill();
-  }
-
-  const tex = new THREE.CanvasTexture(c);
-  tex.encoding = THREE.sRGBEncoding;
-  return tex;
+function loadEarthTexture(path, colorTexture = false) {
+  const texture = textureLoader.load(path);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  if (colorTexture) texture.encoding = THREE.sRGBEncoding;
+  return texture;
 }
 
-const earthTexture = createEarthTexture();
-const nightTexture = createNightTexture();
-const cloudTexture = createCloudTexture();
-const moonTexture  = createMoonTexture();
+// Lightweight photographic maps replace the illustrative canvas continents.
+const earthTexture = loadEarthTexture('assets/earth/day.jpg', true);
+const earthNormalTexture = loadEarthTexture('assets/earth/normal.jpg');
+const earthSpecularTexture = loadEarthTexture('assets/earth/specular.jpg');
+const nightTexture = loadEarthTexture('assets/earth/lights.png', true);
+const moonTextures = createMoonTextures();
 
 // Earth: phong base (keeps shadow support for eclipses) + injected
 // night-lights pass that fades in as each region rotates into darkness
@@ -1013,10 +828,11 @@ const earthNightUniforms = {
 
 const earthMaterial = new THREE.MeshPhongMaterial({
   map: earthTexture,
-  bumpMap: earthTexture,
-  bumpScale: 0.025,
-  specular: new THREE.Color(0x222a3a),
-  shininess: 18
+  normalMap: earthNormalTexture,
+  normalScale: new THREE.Vector2(0.55, 0.55),
+  specularMap: earthSpecularTexture,
+  specular: new THREE.Color(0x596779),
+  shininess: 24
 });
 earthMaterial.onBeforeCompile = (shader) => {
   shader.uniforms.nightMap = earthNightUniforms.nightMap;
@@ -1039,23 +855,13 @@ const earth = new THREE.Mesh(
 earth.castShadow = true;
 earth.receiveShadow = true;
 
-// Earth axial tilt — group it so we can spin around tilted axis
+// Earth axis is fixed in space and tilted from the ecliptic normal. At the
+// starting longitude the Sun is at an equinox; its apparent yearly motion
+// around this Earth-centered frame produces the seasons.
 const earthGroup = new THREE.Group();
 earthGroup.add(earth);
-earthGroup.rotation.z = EARTH_TILT;
+earthGroup.rotation.x = -EARTH_TILT;
 scene.add(earthGroup);
-
-// Cloud layer — drifts independently of the surface below
-const clouds = new THREE.Mesh(
-  new THREE.SphereGeometry(EARTH_RADIUS * 1.018, 64, 64),
-  new THREE.MeshLambertMaterial({
-    map: cloudTexture,
-    transparent: true,
-    depthWrite: false
-  })
-);
-clouds.receiveShadow = true;
-earthGroup.add(clouds);
 
 // Atmosphere — rim glow that brightens toward the sun-facing limb
 const atmosphere = new THREE.Mesh(
@@ -1104,13 +910,14 @@ axisLine.visible = false;
 earthGroup.add(axisLine);
 
 // ─────────────────────────────────────────────────────────
-// 7. MOON (turns blood-red when it slips into Earth's shadow)
+// 7. MOON
 // ─────────────────────────────────────────────────────────
 const moonMaterial = new THREE.MeshPhongMaterial({
-  map: moonTexture,
-  bumpMap: moonTexture,
-  bumpScale: 0.012,
-  shininess: 2
+  map: moonTextures.color,
+  bumpMap: moonTextures.bump,
+  bumpScale: 0.018,
+  specular: new THREE.Color(0x111111),
+  shininess: 1
 });
 const moon = new THREE.Mesh(
   new THREE.SphereGeometry(MOON_RADIUS, 64, 64),
@@ -1120,22 +927,25 @@ moon.castShadow = true;
 moon.receiveShadow = true;
 scene.add(moon);
 
-// Moon orbit ring
+// Moon orbit ring: a slightly eccentric ellipse with Earth at one focus.
 const orbitPoints = [];
 const orbitSegments = 128;
+const moonSemiMinor = MOON_DISTANCE * Math.sqrt(1 - MOON_ORBIT_ECCENTRICITY ** 2);
 for (let i = 0; i <= orbitSegments; i++) {
-  const a = (i / orbitSegments) * Math.PI * 2;
+  const eccentricAnomaly = (i / orbitSegments) * Math.PI * 2;
   orbitPoints.push(new THREE.Vector3(
-    Math.cos(a) * MOON_DISTANCE,
+    MOON_DISTANCE * (Math.cos(eccentricAnomaly) - MOON_ORBIT_ECCENTRICITY),
     0,
-    Math.sin(a) * MOON_DISTANCE
+    moonSemiMinor * Math.sin(eccentricAnomaly)
   ));
 }
 const orbitLine = new THREE.Line(
   new THREE.BufferGeometry().setFromPoints(orbitPoints),
   new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.12 })
 );
-scene.add(orbitLine);
+const moonOrbitFrame = new THREE.Group();
+moonOrbitFrame.add(orbitLine);
+scene.add(moonOrbitFrame);
 
 // ─────────────────────────────────────────────────────────
 // 8. POST-PROCESSING (bloom + gamma + FXAA)
@@ -1273,12 +1083,15 @@ const sim = {
   time: 0,           // simulation time
   speed: 1,          // -3..3 (slider) but we use sliderToSpeed
   playing: true,
-  earthSpinSpeed: 0.6,    // radians per sec at 1×
-  moonOrbitSpeed: 0.075,  // radians per sec at 1× (slower than earth spin)
-  moonPhaseAngle: 0,
+  earthSpinSpeed: 0.6, // one displayed rotation represents one mean Earth day
+  moonOrbitSpeed: 0.6 / EARTH_DAYS_PER_MOON_ORBIT,
+  sunYearSpeed: 0.6 / EARTH_DAYS_PER_YEAR,
+  nodePrecessionSpeed: -0.6 / (EARTH_DAYS_PER_YEAR * NODE_PRECESSION_YEARS),
+  moonPhaseAngle: 0, // mean anomaly
+  sunLongitude: Math.PI,
+  moonNodeLongitude: THREE.MathUtils.degToRad(32),
   showOrbits: true,
   showLabels: true,
-  showClouds: true,
   showAxis: false,
   preset: 'free'
 };
@@ -1297,7 +1110,6 @@ const speedSlider = document.getElementById('speed-slider');
 const speedValue  = document.getElementById('speed-value');
 const toggleOrbits = document.getElementById('toggle-orbits');
 const toggleLabels = document.getElementById('toggle-labels');
-const toggleClouds = document.getElementById('toggle-clouds');
 const toggleAxis   = document.getElementById('toggle-axis');
 const presetEls    = document.querySelectorAll('.preset-btn');
 const labelSun   = document.getElementById('label-sun');
@@ -1339,11 +1151,6 @@ toggleLabels.addEventListener('click', () => {
     l.style.display = sim.showLabels ? '' : 'none';
   });
 });
-toggleClouds.addEventListener('click', () => {
-  sim.showClouds = !sim.showClouds;
-  clouds.visible = sim.showClouds;
-  toggleClouds.classList.toggle('active', sim.showClouds);
-});
 toggleAxis.addEventListener('click', () => {
   sim.showAxis = !sim.showAxis;
   axisLine.visible = sim.showAxis;
@@ -1357,17 +1164,20 @@ const presetData = {
   free: {
     label: '— Observation —',
     title: 'A world half-lit',
-    body: '<strong>The Sun</strong> illuminates only the half of <strong>Earth</strong> that faces it. As Earth spins on its tilted axis, the boundary between day and night — called the <strong>terminator</strong> — sweeps across the surface. Drag to look around. Use the presets to study specific phenomena.',
-    fact: 'The Sun is so big that about 1.3 million Earths could fit inside it!',
-    apply: () => { /* nothing forced */ }
+    body: '<strong>The Sun</strong> illuminates only the half of <strong>Earth</strong> that faces it. This is an Earth-centered reference view: Earth stays in the middle while the Sun traces its apparent yearly path. Distances are compressed, but the tilts and timing ratios are astronomical.',
+    fact: 'The Sun is so big that about 1.3 million Earths could fit inside it. Its displayed size here is enlarged so the whole system remains visible.',
+    apply: () => {
+      sim.moonNodeLongitude = THREE.MathUtils.degToRad(32);
+    }
   },
   daynight: {
     label: '— Phenomenon 01 —',
     title: 'Day & Night',
-    body: 'Notice how exactly half of Earth is lit at any moment. The other half is in <strong>night</strong> — watch the city lights sparkle on as each continent rotates into darkness. Earth completes one rotation every 24 hours. The <strong>tilt</strong> of Earth\'s axis (23.5°) is why days are longer in summer and shorter in winter.',
+    body: 'Notice how exactly half of Earth is lit at any moment. The other half is in <strong>night</strong> — watch the city lights appear as each continent rotates into darkness. Earth completes one mean solar rotation every 24 hours. Its <strong>23.4° axial tilt</strong> changes day length through the seasons.',
     fact: 'When it\'s lunchtime where you live, kids on the opposite side of Earth are fast asleep at midnight.',
     apply: () => {
       sim.moonPhaseAngle = Math.PI * 0.5; // park moon out of the way
+      sim.moonNodeLongitude = THREE.MathUtils.degToRad(32);
       cam.azimuthTarget = 0.3;
       cam.elevationTarget = 0.15;
       cam.distanceTarget = 6;
@@ -1377,9 +1187,10 @@ const presetData = {
   phases: {
     label: '— Phenomenon 02 —',
     title: 'Lunar Phases',
-    body: 'The Moon doesn\'t make its own light — it reflects sunlight. Half of it is always lit, but we see different fractions of that lit half as it orbits us. <strong>New moon</strong>: lit side faces away. <strong>Full moon</strong>: lit side faces us. The slow orbit takes about 27 days.',
-    fact: 'The Moon always shows us the same face. Nobody had ever seen its far side until a spacecraft photographed it in 1959.',
+    body: 'The Moon doesn\'t make its own light — it reflects sunlight. Half is always lit, but we see different fractions as it moves. The Moon orbits relative to the stars in <strong>27.3 days</strong>; because Earth also travels around the Sun, the phase cycle takes <strong>29.5 days</strong>.',
+    fact: 'The Moon rotates once per orbit, keeping nearly the same face toward Earth. Small real wobbles called libration are omitted here.',
     apply: () => {
+      sim.moonNodeLongitude = THREE.MathUtils.degToRad(32);
       sim.speed = 1.5;
       speedSlider.value = Math.log2(1.5).toFixed(2);
       speedValue.textContent = '1.5×';
@@ -1397,6 +1208,8 @@ const presetData = {
     apply: () => {
       sim.playing = false;
       playIcon.innerHTML = PLAY_ICON;
+      sim.sunLongitude = Math.PI;
+      sim.moonNodeLongitude = 0;
       sim.moonPhaseAngle = Math.PI; // moon between sun (-X) and earth → moon at -X side
       cam.azimuthTarget = -1.4;
       cam.elevationTarget = 0.1;
@@ -1407,11 +1220,13 @@ const presetData = {
   lunar: {
     label: '— Phenomenon 04 —',
     title: 'Lunar Eclipse',
-    body: 'When the <strong>Earth passes between the Sun and Moon</strong>, Earth\'s shadow falls onto the Moon. The full moon dims and turns deep red — sunlight bent through Earth\'s atmosphere. This is a <strong>lunar eclipse</strong>, visible to anyone on Earth\'s night side.',
-    fact: 'During a lunar eclipse the Moon glows red because it\'s being lit by every sunrise and sunset on Earth at once.',
+    body: 'When the <strong>Earth passes between the Sun and Moon</strong>, Earth\'s shadow falls onto the Moon. The full moon dims dramatically and can take on a muted copper tone from sunlight filtered through Earth\'s atmosphere. This is a <strong>lunar eclipse</strong>, visible to anyone on Earth\'s night side.',
+    fact: 'The copper tint is real but usually subtle: Earth\'s atmosphere removes more blue light while bending the remaining warm light into the shadow.',
     apply: () => {
       sim.playing = false;
       playIcon.innerHTML = PLAY_ICON;
+      sim.sunLongitude = Math.PI;
+      sim.moonNodeLongitude = 0;
       sim.moonPhaseAngle = 0; // moon at +X, earth between sun and moon
       cam.azimuthTarget = 1.4;
       cam.elevationTarget = 0.1;
@@ -1451,25 +1266,36 @@ function project(obj3D, labelEl, offsetY = -34) {
 }
 
 // ─────────────────────────────────────────────────────────
-// 14. MOON PHASE NAMING
+// 14. ORBIT AND PHASE GEOMETRY
 // ─────────────────────────────────────────────────────────
-function describePhase(angle) {
-  // angle = moon's orbital position around earth (0 at +X, going CCW from above)
-  // sun is at -X, so:
-  // angle = π → moon between earth and sun → NEW
-  // angle = 0 → moon opposite sun → FULL
-  // angle = π/2 → first quarter
-  // angle = 3π/2 → last quarter
-  let a = ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-  const deg = a * 180 / Math.PI;
-  if (deg < 22.5 || deg >= 337.5) return 'Full';
-  if (deg < 67.5)  return 'Waning Gibbous';
-  if (deg < 112.5) return 'Last Quarter';
-  if (deg < 157.5) return 'Waning Crescent';
-  if (deg < 202.5) return 'New';
-  if (deg < 247.5) return 'Waxing Crescent';
-  if (deg < 292.5) return 'First Quarter';
-  return 'Waxing Gibbous';
+function solveEccentricAnomaly(meanAnomaly) {
+  let eccentricAnomaly = meanAnomaly;
+  for (let i = 0; i < 5; i++) {
+    eccentricAnomaly -= (
+      eccentricAnomaly
+      - MOON_ORBIT_ECCENTRICITY * Math.sin(eccentricAnomaly)
+      - meanAnomaly
+    ) / (1 - MOON_ORBIT_ECCENTRICITY * Math.cos(eccentricAnomaly));
+  }
+  return eccentricAnomaly;
+}
+
+function describePhase(moonPos, sunPos) {
+  const moonLongitude = Math.atan2(moonPos.z, moonPos.x);
+  const sunLongitude = Math.atan2(sunPos.z, sunPos.x);
+  const relative = (
+    (moonLongitude - sunLongitude) % (Math.PI * 2) + Math.PI * 2
+  ) % (Math.PI * 2);
+  const deg = THREE.MathUtils.radToDeg(relative);
+
+  if (deg < 22.5 || deg >= 337.5) return 'New';
+  if (deg < 67.5) return 'Waxing Crescent';
+  if (deg < 112.5) return 'First Quarter';
+  if (deg < 157.5) return 'Waxing Gibbous';
+  if (deg < 202.5) return 'Full';
+  if (deg < 247.5) return 'Waning Gibbous';
+  if (deg < 292.5) return 'Last Quarter';
+  return 'Waning Crescent';
 }
 
 const _sunDirWorld = new THREE.Vector3();
@@ -1478,14 +1304,15 @@ const _moonDir = new THREE.Vector3();
 function detectEvent(moonPos) {
   _sunDirWorld.copy(sunGroup.position).normalize();
   _moonDir.copy(moonPos).normalize();
-  const cos = _sunDirWorld.dot(_moonDir);
+  const dot = THREE.MathUtils.clamp(_sunDirWorld.dot(_moonDir), -1, 1);
+  const solarSeparation = Math.acos(dot);
+  const lunarSeparation = Math.acos(-dot);
 
-  // If moon is between sun and earth (moonDir ~ same as sunDir): solar eclipse alignment
-  // If moon is opposite (moonDir ~ -sunDir): lunar eclipse alignment
-  if (cos > 0.998) return 'Solar Eclipse';
-  if (cos < -0.998) return 'Lunar Eclipse';
-  if (cos > 0.99) return 'Near Solar';
-  if (cos < -0.99) return 'Near Lunar';
+  // Physical angular tolerances, independent of the compressed display scale.
+  if (solarSeparation < THREE.MathUtils.degToRad(0.55)) return 'Solar Eclipse';
+  if (lunarSeparation < THREE.MathUtils.degToRad(1.0)) return 'Lunar Eclipse';
+  if (solarSeparation < THREE.MathUtils.degToRad(2.0)) return 'Near Solar Node';
+  if (lunarSeparation < THREE.MathUtils.degToRad(2.0)) return 'Near Lunar Node';
   return '—';
 }
 
@@ -1494,6 +1321,10 @@ function detectEvent(moonPos) {
 // ─────────────────────────────────────────────────────────
 let lastT = performance.now();
 const _sunDirView = new THREE.Vector3();
+const _orbitNodeAxis = new THREE.Vector3();
+const _orbitTiltQuat = new THREE.Quaternion();
+const _orbitNormal = new THREE.Vector3();
+const _moonBasePosition = new THREE.Vector3();
 
 function animate() {
   requestAnimationFrame(animate);
@@ -1504,18 +1335,42 @@ function animate() {
   if (sim.playing) {
     sim.time += dt * sim.speed;
     sim.moonPhaseAngle += dt * sim.speed * sim.moonOrbitSpeed;
+    sim.sunLongitude += dt * sim.speed * sim.sunYearSpeed;
+    sim.moonNodeLongitude += dt * sim.speed * sim.nodePrecessionSpeed;
   }
 
-  // Earth spins on tilted axis (rotation.y inside the tilted group spins around tilt axis)
-  earth.rotation.y = sim.time * sim.earthSpinSpeed;
-  // clouds drift a little faster than the ground, so weather visibly moves
-  clouds.rotation.y = sim.time * sim.earthSpinSpeed * 1.12;
+  // Earth rotates eastward: counter-clockwise when viewed above the north pole.
+  earth.rotation.y = -sim.time * sim.earthSpinSpeed;
 
-  // Moon orbits earth in the XZ plane (ecliptic)
-  const mx = Math.cos(sim.moonPhaseAngle) * MOON_DISTANCE;
-  const mz = Math.sin(sim.moonPhaseAngle) * MOON_DISTANCE;
-  moon.position.set(mx, 0, mz);
-  moon.rotation.y = sim.moonPhaseAngle; // tidally locked
+  // The Sun's apparent annual path in this explicitly Earth-centered frame.
+  sunGroup.position.set(
+    Math.cos(sim.sunLongitude) * SUN_DISTANCE,
+    0,
+    Math.sin(sim.sunLongitude) * SUN_DISTANCE
+  );
+  sunLight.position.copy(sunGroup.position);
+
+  // Incline the eccentric lunar orbit around its slowly precessing node line.
+  _orbitNodeAxis.set(
+    Math.cos(sim.moonNodeLongitude),
+    0,
+    Math.sin(sim.moonNodeLongitude)
+  );
+  _orbitTiltQuat.setFromAxisAngle(_orbitNodeAxis, MOON_ORBIT_INCLINATION);
+  moonOrbitFrame.quaternion.copy(_orbitTiltQuat);
+
+  const eccentricAnomaly = solveEccentricAnomaly(sim.moonPhaseAngle);
+  _moonBasePosition.set(
+    MOON_DISTANCE * (Math.cos(eccentricAnomaly) - MOON_ORBIT_ECCENTRICITY),
+    0,
+    moonSemiMinor * Math.sin(eccentricAnomaly)
+  );
+  moon.position.copy(_moonBasePosition).applyQuaternion(_orbitTiltQuat);
+
+  // Synchronous rotation: the same lunar hemisphere remains Earth-facing.
+  _orbitNormal.set(0, 1, 0).applyQuaternion(_orbitTiltQuat);
+  moon.up.copy(_orbitNormal);
+  moon.lookAt(0, 0, 0);
 
   // Smooth camera
   cam.azimuth   += (cam.azimuthTarget   - cam.azimuth)   * 0.12;
@@ -1535,14 +1390,30 @@ function animate() {
   _sunDirView.copy(sunGroup.position).normalize()
     .transformDirection(camera.matrixWorldInverse);
   earthNightUniforms.sunDirView.value.copy(_sunDirView);
-
-  // Blood-moon glow: as the moon slides behind Earth (lunar eclipse),
-  // fade in a red emissive — refracted sunset light through Earth's atmosphere
   _sunDirWorld.copy(sunGroup.position).normalize();
+  atmosphere.material.uniforms.sunDir.value.copy(_sunDirWorld);
+
+  // In totality the Moon is very dim; filtered sunlight adds only a restrained
+  // copper cast rather than the previous saturated red glow.
   _moonDir.copy(moon.position).normalize();
-  const alignment = -_sunDirWorld.dot(_moonDir); // 1 when moon exactly opposite sun
-  const eclipseT = THREE.MathUtils.smoothstep(alignment, 0.985, 0.999);
-  moonMaterial.emissive.setRGB(0.38 * eclipseT, 0.06 * eclipseT, 0.02 * eclipseT);
+  const lunarSeparation = Math.acos(THREE.MathUtils.clamp(
+    -_sunDirWorld.dot(_moonDir), -1, 1
+  ));
+  const eclipseT = 1 - THREE.MathUtils.smoothstep(
+    lunarSeparation,
+    THREE.MathUtils.degToRad(0.35),
+    THREE.MathUtils.degToRad(1.0)
+  );
+  moonMaterial.color.setRGB(
+    1.0 - 0.35 * eclipseT,
+    1.0 - 0.55 * eclipseT,
+    1.0 - 0.68 * eclipseT
+  );
+  moonMaterial.emissive.setRGB(
+    0.055 * eclipseT,
+    0.018 * eclipseT,
+    0.006 * eclipseT
+  );
 
   // Labels
   project(sunGroup, labelSun, -50);
@@ -1552,7 +1423,7 @@ function animate() {
   // Telemetry
   const dayFraction = (sim.time * sim.earthSpinSpeed) / (Math.PI * 2);
   metaDay.textContent = (dayFraction % 1).toFixed(2);
-  metaPhase.textContent = describePhase(sim.moonPhaseAngle);
+  metaPhase.textContent = describePhase(moon.position, sunGroup.position);
   metaEvent.textContent = detectEvent(moon.position);
 
   if (composer) composer.render();
@@ -1569,6 +1440,8 @@ requestAnimationFrame(() => {
 
 // Start with free preset info
 applyPreset('free');
+
+SPACE.buildNav('light');
 </script>
 </body>
 </html>

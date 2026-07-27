@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>How Far Apart? — A Space Walk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  .info-panel { top: 104px; width: 350px; }
+  .info-title { font-size: 26px; line-height: 1.1; }
+  .facts { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 4px; }
+  .fact-row { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; line-height: 1.4; }
+  .fact-row:last-child { border-bottom: none; }
+  .fact-key { flex-shrink: 0; width: 74px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-warm); padding-top: 2px; }
+  .fact-val { color: var(--ink-dim); font-weight: 300; } .fact-val strong { color: var(--ink); font-weight: 500; }
+  .analogy {
+    margin-top: 16px; padding: 14px; border: 1px solid rgba(244,197,96,0.25); border-radius: 2px;
+    background: rgba(244,197,96,0.05); font-size: 13px; line-height: 1.5; color: var(--ink-dim);
+  }
+  .analogy strong { color: var(--accent); font-weight: 500; }
+  .analogy .fact-tag { display:block; font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:0.2em; text-transform:uppercase; color:var(--accent-warm); margin-bottom:6px; }
+  .stops { position: fixed; top: 50%; right: 24px; transform: translateY(-50%); display: flex; flex-direction: column; gap: 3px; z-index: 10; max-height: 84vh; overflow: auto; }
+  .stop-btn { background: var(--panel); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--line); border-radius: 2px; padding: 8px 14px; width: 168px; color: var(--ink); font-family: 'Fraunces', serif; font-size: 13px; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 11px; transition: all 0.2s; }
+  .stop-btn:hover { background: var(--panel-bright); border-color: rgba(244,197,96,0.3); transform: translateX(-3px); }
+  .stop-btn.active { border-color: var(--accent); background: rgba(244,197,96,0.08); }
+  .stop-btn .s-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 6px currentColor; }
+  .walk-controls { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 14px; z-index: 10; background: var(--panel); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--line); border-radius: 2px; padding: 12px 18px; }
+  .walk-btn { background: transparent; border: 1px solid var(--line); color: var(--ink); font-family: 'Fraunces', serif; font-size: 14px; padding: 9px 18px; border-radius: 2px; cursor: pointer; transition: all 0.2s; }
+  .walk-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .walk-btn:disabled { opacity: 0.3; cursor: default; }
+  .walk-progress { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: var(--ink-dim); min-width: 88px; text-align: center; }
+  @media (max-width: 820px) {
+    .info-panel { top: auto; bottom: 96px; left: 12px; right: 12px; width: auto; max-height: 46vh; overflow: auto; }
+    .info-title { font-size: 20px; }
+    .stops { top: 64px; right: 10px; transform: none; max-height: 34vh; }
+    .stop-btn { width: 120px; padding: 6px 9px; font-size: 11px; }
+    .hint { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="canvas-container"></div>
+<div class="loader" id="loader"><div class="loader-text">Measuring the void…</div></div>
+
+<header class="header">
+  <div>
+    <h1 class="title">How Far Apart?<br/><em>a space walk</em></h1>
+    <div class="subtitle">Interactive · True Distances · One Basketball</div>
+  </div>
+  <div class="header-meta">
+    <div>Now visiting · <span id="meta-stop">The Sun</span></div>
+    <div>Distances here · <span id="meta-model">True to scale</span></div>
+  </div>
+</header>
+
+<aside class="info-panel">
+  <div class="info-label" id="s-label">— Start here —</div>
+  <h2 class="info-title" id="s-title">The Sun</h2>
+  <p class="info-body" id="s-body"></p>
+  <div class="facts" id="s-facts"></div>
+  <div class="analogy" id="s-analogy"></div>
+</aside>
+
+<div class="stops" id="stops"></div>
+
+<div class="walk-controls">
+  <button class="walk-btn" id="prev">‹ Back</button>
+  <span class="walk-progress" id="progress">Stop 1 / 9</span>
+  <button class="walk-btn" id="next">Travel ›</button>
+</div>
+
+<div class="hint"><span class="key">Drag</span> to look around · <span class="key">Scroll</span> to zoom</div>
+
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/shaders/GammaCorrectionShader.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script src="common.js"></script>
+<script>
+'use strict';
+const clamp = SPACE.clamp;
+
+const container = document.getElementById('canvas-container');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x050810);
+const camera = new THREE.PerspectiveCamera(50, innerWidth/innerHeight, 0.05, 6000);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+container.appendChild(renderer.domElement);
+
+const starfield = SPACE.createStarfield({ count: 6000, innerR: 1500, outerR: 3000 });
+scene.add(starfield.points);
+
+const AU = 40; // display units per AU (distances are honest, sizes gently enlarged)
+const PLANETS = [
+  { name:'Mercury', au:0.387, radiusKm:2440, dia:4879,   dot:'#b9b2a6', object:'a grain of salt' },
+  { name:'Venus',   au:0.723, radiusKm:6052, dia:12104,  dot:'#e8cd8a', object:'a peppercorn' },
+  { name:'Earth',   au:1.000, radiusKm:6371, dia:12742,  dot:'#6ab0ff', object:'a peppercorn' },
+  { name:'Mars',    au:1.524, radiusKm:3390, dia:6779,   dot:'#d0674a', object:'a pinhead' },
+  { name:'Jupiter', au:5.203, radiusKm:69911,dia:139820, dot:'#d9b48a', object:'a walnut' },
+  { name:'Saturn',  au:9.537, radiusKm:58232,dia:116460, dot:'#e6d3a0', object:'a large marble' },
+  { name:'Uranus',  au:19.19, radiusKm:25362,dia:50724,  dot:'#a9e0e2', object:'a pea' },
+  { name:'Neptune', au:30.07, radiusKm:24622,dia:49244,  dot:'#3f6fd8', object:'a pea' }
+];
+
+// Sun at origin
+const SUN = SPACE.createSun(3.2);
+scene.add(SUN.group);
+scene.add(new THREE.PointLight(0xfff2e0, 2.6, 0, 0));
+scene.add(new THREE.AmbientLight(0x334466, 0.35));
+
+// the path line along +X
+const pathEnd = PLANETS[PLANETS.length-1].au * AU;
+scene.add(new THREE.Line(
+  new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(pathEnd,0,0)]),
+  new THREE.LineBasicMaterial({ color: 0x6ab0ff, transparent: true, opacity: 0.12 })));
+
+const labelLayer = document.createElement('div'); document.body.appendChild(labelLayer);
+function makeLabel(text, color){ const el=document.createElement('div'); el.className='label-3d'; el.textContent=text; el.style.color=color; labelLayer.appendChild(el); return el; }
+SUN.label = makeLabel('The Sun', '#f4c560');
+
+PLANETS.forEach(p => {
+  p.x = p.au * AU;
+  p.dispR = clamp(0.5 * Math.sqrt(p.radiusKm/6371), 0.22, 1.7);
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(p.dispR, 48, 48),
+    new THREE.MeshStandardMaterial({ color: p.dot, roughness: 1, metalness: 0, emissive: new THREE.Color(p.dot).multiplyScalar(0.04) }));
+  mesh.position.set(p.x, 0, 0);
+  scene.add(mesh); p.mesh = mesh;
+  // a faint tick marker so far planets are findable
+  const halo = new THREE.Mesh(new THREE.RingGeometry(p.dispR*1.6, p.dispR*1.75, 40),
+    new THREE.MeshBasicMaterial({ color: p.dot, transparent: true, opacity: 0.35, side: THREE.DoubleSide }));
+  halo.position.copy(mesh.position); halo.lookAt(0,1,0); scene.add(halo);
+  p.label = makeLabel(p.name, p.dot);
+});
+
+let composer=null;
+try {
+  composer = new THREE.EffectComposer(renderer);
+  composer.setPixelRatio(Math.min(devicePixelRatio,2)); composer.setSize(innerWidth,innerHeight);
+  composer.addPass(new THREE.RenderPass(scene,camera));
+  composer.addPass(new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),0.7,0.5,0.78));
+  composer.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
+} catch(e){ composer=null; }
+
+const cam = SPACE.createOrbitControls(camera, renderer.domElement, {
+  azimuth: 0.9, elevation: 0.35, distance: 12, minDistance: 2, maxDistance: 1600,
+  zoomDistanceScale: 0.06, damping: 0.09, distanceDamping: 0.05
+});
+addEventListener('resize', () => {
+  camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+  if (composer) composer.setSize(innerWidth,innerHeight);
+});
+
+// ── stops (Sun + 8 planets) ──
+const BASKETBALL_M = 0.24, SUN_DIA_KM = 1392000;
+const modelScale = BASKETBALL_M / (SUN_DIA_KM * 1000); // metres per real metre
+function analogyFor(p){
+  const distM = p.au * 1.496e11 * modelScale;            // metres from the basketball Sun
+  const sizeMm = p.dia * 1000 * modelScale * 1000;       // model diameter in mm
+  const distStr = distM < 1000 ? distM.toFixed(distM<100?1:0) + ' m' : (distM/1000).toFixed(2) + ' km';
+  return `If the Sun were a <strong>24&nbsp;cm basketball</strong>, ${p.name} would be ${p.object}
+    (about <strong>${sizeMm.toFixed(1)}&nbsp;mm</strong>) sitting <strong>${distStr}</strong> away.`;
+}
+function lightTime(au){
+  const min = au * 8.317;
+  if (min < 60) return min.toFixed(1) + ' minutes';
+  return (min/60).toFixed(1) + ' hours';
+}
+
+const STOPS = [{ sun:true }].concat(PLANETS.map(p => ({ p })));
+let idx = 0;
+
+const stopsEl = document.getElementById('stops');
+const sLabel=document.getElementById('s-label'), sTitle=document.getElementById('s-title'), sBody=document.getElementById('s-body');
+const sFacts=document.getElementById('s-facts'), sAnalogy=document.getElementById('s-analogy');
+const metaStop=document.getElementById('meta-stop'), progress=document.getElementById('progress');
+const prevBtn=document.getElementById('prev'), nextBtn=document.getElementById('next');
+
+function row(k,v){ return `<div class="fact-row"><span class="fact-key">${k}</span><span class="fact-val">${v}</span></div>`; }
+
+STOPS.forEach((s,i)=>{
+  const b=document.createElement('button'); b.className='stop-btn';
+  const name = s.sun ? 'The Sun' : s.p.name;
+  const color = s.sun ? '#f4c560' : s.p.dot;
+  b.innerHTML=`<span class="s-dot" style="background:${color}"></span><span>${name}</span>`;
+  b.onclick=()=>goTo(i);
+  stopsEl.appendChild(b); s.btn=b;
+});
+
+function render(){
+  const s=STOPS[idx];
+  STOPS.forEach(x=>x.btn.classList.toggle('active', x===s));
+  progress.textContent = `Stop ${idx+1} / ${STOPS.length}`;
+  prevBtn.disabled = idx===0; nextBtn.disabled = idx===STOPS.length-1;
+  if (s.sun){
+    sLabel.textContent='— Start here —'; sTitle.textContent='The Sun'; metaStop.textContent='The Sun';
+    sBody.textContent='Almost everything in the solar system is empty space. To feel just how empty, shrink the whole Sun down to a basketball and walk outward. Press “Travel ›” to visit each planet at its real distance.';
+    sFacts.innerHTML = row('Diameter','1,392,000 km — about 109 Earths across.') + row('Holds','More than 99% of all the mass in the solar system.');
+    sAnalogy.innerHTML = `<span class="fact-tag">✦ Shrink it down</span>Make the Sun a <strong>24&nbsp;cm basketball</strong>. Then Earth is a <strong>peppercorn about 26&nbsp;m away</strong>, and Neptune is a pea nearly <strong>800&nbsp;m away</strong>. That is how empty space really is.`;
+  } else {
+    const p=s.p;
+    sLabel.textContent='— Planet '+String(idx).padStart(2,'0')+' —'; sTitle.textContent=p.name; metaStop.textContent=p.name;
+    sBody.textContent = `We have travelled out to ${p.name}. Look back — the Sun is far behind, and there is a huge amount of empty space between each world.`;
+    sFacts.innerHTML =
+      row('Distance', (p.au*149.6).toFixed(0) + ' million km (' + p.au.toFixed(2) + ' AU) from the Sun') +
+      row('Light time', 'Sunlight takes ' + lightTime(p.au) + ' to reach here') +
+      row('Diameter', p.dia.toLocaleString() + ' km');
+    sAnalogy.innerHTML = `<span class="fact-tag">✦ Basketball Sun</span>` + analogyFor(p);
+  }
+}
+function targetPos(){ const s=STOPS[idx]; return s.sun ? new THREE.Vector3(0,0,0) : s.p.mesh.position; }
+function targetDist(){ const s=STOPS[idx]; return s.sun ? 11 : clamp(s.p.dispR*9, 3, 26); }
+function goTo(i){ idx=clamp(i,0,STOPS.length-1); cam.distanceTarget=targetDist(); render(); }
+prevBtn.onclick=()=>goTo(idx-1); nextBtn.onclick=()=>goTo(idx+1);
+addEventListener('keydown', e => { if(e.key==='ArrowRight')goTo(idx+1); if(e.key==='ArrowLeft')goTo(idx-1); });
+
+const _v=new THREE.Vector3();
+function place(obj, el){ obj.getWorldPosition(_v); _v.project(camera);
+  if (_v.z>1){ el.style.opacity=0; return; }
+  el.style.left=(_v.x*0.5+0.5)*innerWidth+'px'; el.style.top=(_v.y*-0.5+0.5)*innerHeight-26+'px'; el.style.opacity=0.85; }
+
+function animate(){
+  requestAnimationFrame(animate);
+  const now=performance.now();
+  cam.target.lerp(targetPos(), 0.06);
+  cam.update();
+  SUN.uniforms.uTime.value = now*0.001;
+  starfield.uniforms.uTime.value = now*0.001;
+  place(SUN.group, SUN.label);
+  PLANETS.forEach(p=>place(p.mesh, p.label));
+  if (composer) composer.render(); else renderer.render(scene,camera);
+}
+render();
+requestAnimationFrame(()=>{ setTimeout(()=>document.getElementById('loader').classList.add('hidden'),250); animate(); });
+SPACE.buildNav('scale');
+</script>
+</body>
+</html>

@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Why We Have Seasons</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  .info-panel { top: 104px; width: 340px; }
+  .info-title { font-size: 26px; line-height: 1.1; }
+  .info-sub {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--accent-warm); margin: 14px 0 4px;
+  }
+  .hemi-row { display: flex; gap: 10px; margin-top: 8px; }
+  .hemi {
+    flex: 1; border: 1px solid var(--line); border-radius: 2px; padding: 10px 12px;
+    font-size: 13px; color: var(--ink-dim);
+  }
+  .hemi .h-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--ink-faint); display: block; margin-bottom: 4px;
+  }
+  .hemi .h-season { color: var(--ink); font-size: 15px; }
+  .info-wow {
+    margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line);
+    font-size: 13px; line-height: 1.5; color: var(--ink-dim); font-weight: 300;
+  }
+  .info-wow .fact-tag {
+    display: block; font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px;
+  }
+  .seasons-picker {
+    position: fixed; top: 50%; right: 24px; transform: translateY(-50%);
+    display: flex; flex-direction: column; gap: 6px; z-index: 10;
+  }
+  .season-btn {
+    background: var(--panel); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--line); border-radius: 2px; padding: 11px 16px; width: 210px;
+    color: var(--ink); font-family: 'Fraunces', serif; font-size: 13px; cursor: pointer;
+    text-align: left; transition: all 0.22s ease; display: flex; align-items: center; gap: 12px;
+  }
+  .season-btn:hover { background: var(--panel-bright); border-color: rgba(244,197,96,0.3); transform: translateX(-3px); }
+  .season-btn.active { border-color: var(--accent); background: rgba(244,197,96,0.08); }
+  .season-btn .s-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .season-btn em { font-style: italic; color: var(--accent-warm); }
+  @media (max-width: 820px) {
+    .info-panel { top: auto; bottom: 200px; left: 16px; right: 16px; width: auto; max-height: 42vh; overflow: auto; }
+    .info-title { font-size: 20px; }
+    .seasons-picker { top: 64px; right: 12px; transform: none; }
+    .season-btn { width: 150px; padding: 8px 10px; font-size: 11px; }
+    .controls { bottom: 14px; padding: 10px 12px; gap: 10px; flex-wrap: wrap; justify-content: center; }
+    .hint { display: none; } .divider { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="canvas-container"></div>
+<div class="loader" id="loader"><div class="loader-text">Tilting the Earth…</div></div>
+
+<header class="header">
+  <div>
+    <h1 class="title">Why We Have<br/><em>Seasons</em></h1>
+    <div class="subtitle">Interactive · One Tilt · Four Seasons</div>
+  </div>
+  <div class="header-meta">
+    <div>Time of year · <span id="meta-month">—</span></div>
+    <div>Sun overhead at · <span id="meta-sub">Equator</span></div>
+  </div>
+</header>
+
+<aside class="info-panel">
+  <div class="info-label">— The reason for seasons —</div>
+  <h2 class="info-title" id="s-title">A tilted world</h2>
+  <p class="info-body" id="s-body"></p>
+  <div class="hemi-row">
+    <div class="hemi"><span class="h-label">Northern half</span><span class="h-season" id="north-season">—</span></div>
+    <div class="hemi"><span class="h-label">Southern half</span><span class="h-season" id="south-season">—</span></div>
+  </div>
+  <div class="info-wow">
+    <span class="fact-tag">✦ The big idea</span>
+    Seasons are <strong>not</strong> because Earth gets closer to the Sun. They happen because Earth is
+    tilted, so each half leans toward the Sun for part of the year and away for the rest.
+  </div>
+</aside>
+
+<div class="seasons-picker" id="picker"></div>
+
+<div class="controls">
+  <button class="play-btn" id="play-btn" aria-label="Play / Pause">
+    <svg id="play-icon" viewBox="0 0 12 12" fill="currentColor"><path d="M2 1 L4.5 1 L4.5 11 L2 11 Z M7.5 1 L10 1 L10 11 L7.5 11 Z"/></svg>
+  </button>
+  <div class="speed-group">
+    <span class="speed-label">Time of year</span>
+    <input type="range" class="speed-slider" id="year-slider" min="0" max="360" step="0.5" value="0">
+  </div>
+  <div class="divider"></div>
+  <div class="toggle-group">
+    <button class="toggle-btn active" id="toggle-axis">Axis</button>
+    <button class="toggle-btn active" id="toggle-rays">Sunlight</button>
+  </div>
+</div>
+
+<div class="hint"><span class="key">Drag</span> to rotate · <span class="key">Scroll</span> to zoom</div>
+
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/shaders/GammaCorrectionShader.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script src="common.js"></script>
+<script>
+'use strict';
+const clamp = SPACE.clamp;
+const DEG = THREE.MathUtils.degToRad;
+
+const container = document.getElementById('canvas-container');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x050810);
+const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 3000);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+container.appendChild(renderer.domElement);
+
+const starfield = SPACE.createStarfield({ count: 3500, innerR: 400, outerR: 900 });
+scene.add(starfield.points);
+const starU = starfield.uniforms;
+
+// Sun at centre
+const ORBIT_R = 9, EARTH_R = 0.85, TILT = DEG(23.4393);
+const SUN = SPACE.createSun(1.7);
+scene.add(SUN.group);
+const sunLight = new THREE.PointLight(0xfff2e0, 2.4, 0, 0);
+scene.add(sunLight);
+scene.add(new THREE.AmbientLight(0x223355, 0.22));
+
+// faint orbit ring
+const ringPts = [];
+for (let i=0;i<=180;i++){ const a=i/180*Math.PI*2; ringPts.push(new THREE.Vector3(Math.cos(a)*ORBIT_R,0,Math.sin(a)*ORBIT_R)); }
+scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(ringPts),
+  new THREE.LineBasicMaterial({ color: 0x6ab0ff, transparent: true, opacity: 0.18 })));
+
+// Earth: axis fixed in world space, tilted toward +Z-ish so θ=90° is N summer
+const northPole = new THREE.Vector3(0, Math.cos(TILT), -Math.sin(TILT)).normalize();
+const earthPivot = new THREE.Group(); // orients local +Y to the fixed north pole
+earthPivot.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), northPole);
+scene.add(earthPivot);
+
+const tex = new THREE.TextureLoader().load('assets/earth/day.jpg');
+tex.encoding = THREE.sRGBEncoding;
+const earth = new THREE.Mesh(new THREE.SphereGeometry(EARTH_R, 96, 96),
+  new THREE.MeshStandardMaterial({ map: tex, roughness: 1, metalness: 0 }));
+earthPivot.add(earth);
+
+// axis line + equator ring drawn in the tilted frame
+const axis = new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+  new THREE.Vector3(0,-EARTH_R*1.7,0), new THREE.Vector3(0,EARTH_R*1.7,0)]),
+  new THREE.LineDashedMaterial({ color: 0xf4c560, dashSize: 0.08, gapSize: 0.06, transparent: true, opacity: 0.8 }));
+axis.computeLineDistances();
+earthPivot.add(axis);
+const eqPts = [];
+for (let i=0;i<=64;i++){ const a=i/64*Math.PI*2; eqPts.push(new THREE.Vector3(Math.cos(a)*EARTH_R*1.02,0,Math.sin(a)*EARTH_R*1.02)); }
+const equator = new THREE.Line(new THREE.BufferGeometry().setFromPoints(eqPts),
+  new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.25 }));
+earthPivot.add(equator);
+
+// sunlight rays — parallel arrows striking Earth, brighter where light is direct
+const rayGroup = new THREE.Group();
+scene.add(rayGroup);
+const rayMat = new THREE.LineBasicMaterial({ color: 0xffd98a, transparent: true, opacity: 0.5 });
+for (let i=0;i<7;i++){
+  const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]);
+  rayGroup.add(new THREE.Line(g, rayMat));
+}
+
+// season markers around the orbit
+const MARKERS = [
+  { deg: 0,   name: 'March equinox',    dot: '#8fd0a0' },
+  { deg: 90,  name: 'June solstice',    dot: '#f4c560' },
+  { deg: 180, name: 'Sept equinox',     dot: '#e8945a' },
+  { deg: 270, name: 'December solstice',dot: '#6ab0ff' }
+];
+const labelLayer = document.createElement('div'); document.body.appendChild(labelLayer);
+MARKERS.forEach(m => {
+  const a = DEG(m.deg);
+  const dot = new THREE.Mesh(new THREE.SphereGeometry(0.12,16,16),
+    new THREE.MeshBasicMaterial({ color: m.dot }));
+  dot.position.set(Math.cos(a)*ORBIT_R, 0, Math.sin(a)*ORBIT_R);
+  scene.add(dot); m.mesh = dot;
+  const el = document.createElement('div'); el.className='label-3d'; el.textContent=m.name;
+  el.style.color = m.dot; labelLayer.appendChild(el); m.label = el;
+});
+
+// bloom
+let composer=null;
+try {
+  composer = new THREE.EffectComposer(renderer);
+  composer.setPixelRatio(Math.min(devicePixelRatio,2)); composer.setSize(innerWidth,innerHeight);
+  composer.addPass(new THREE.RenderPass(scene,camera));
+  composer.addPass(new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),0.7,0.5,0.75));
+  composer.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
+} catch(e){ composer=null; }
+
+const cam = SPACE.createOrbitControls(camera, renderer.domElement, {
+  azimuth: 0.6, elevation: 0.7, distance: 22, minDistance: 6, maxDistance: 60, damping: 0.1
+});
+addEventListener('resize', () => {
+  camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+  if (composer) composer.setSize(innerWidth,innerHeight);
+});
+
+// ── state / UI ──
+const state = { theta: 0, playing: true, showAxis: true, showRays: true }; // starts playing → matches the Pause icon
+const playBtn=document.getElementById('play-btn'), playIcon=document.getElementById('play-icon');
+const slider=document.getElementById('year-slider');
+const PLAY='<path d="M2 1 L10 6 L2 11 Z"/>', PAUSE='<path d="M2 1 L4.5 1 L4.5 11 L2 11 Z M7.5 1 L10 1 L10 11 L7.5 11 Z"/>';
+playBtn.onclick=()=>{ state.playing=!state.playing; playIcon.innerHTML=state.playing?PAUSE:PLAY; };
+slider.oninput=()=>{ state.theta=parseFloat(slider.value); state.playing=false; playIcon.innerHTML=PLAY; };
+document.getElementById('toggle-axis').onclick=function(){ state.showAxis=!state.showAxis; axis.visible=equator.visible=state.showAxis; this.classList.toggle('active',state.showAxis); };
+document.getElementById('toggle-rays').onclick=function(){ state.showRays=!state.showRays; rayGroup.visible=state.showRays; this.classList.toggle('active',state.showRays); };
+
+const picker=document.getElementById('picker');
+MARKERS.forEach(m=>{
+  const b=document.createElement('button'); b.className='season-btn';
+  b.innerHTML=`<span class="s-dot" style="background:${m.dot}"></span><span>${m.name}</span>`;
+  b.onclick=()=>{ state.theta=m.deg; slider.value=m.deg; state.playing=false; playIcon.innerHTML=PLAY; };
+  picker.appendChild(b); m.btn=b;
+});
+
+const monthAt = t => ['Mar 21','Apr','May','Jun 21','Jul','Aug','Sep 23','Oct','Nov','Dec 21','Jan','Feb'][Math.floor(((t%360)/360)*12)];
+const sTitle=document.getElementById('s-title'), sBody=document.getElementById('s-body');
+const northSeason=document.getElementById('north-season'), southSeason=document.getElementById('south-season');
+const metaMonth=document.getElementById('meta-month'), metaSub=document.getElementById('meta-sub');
+
+function seasonName(theta){ // northern hemisphere season
+  const t=((theta%360)+360)%360;
+  if (t<90) return 'Spring';
+  if (t<180) return 'Summer';
+  if (t<270) return 'Autumn';
+  return 'Winter';
+}
+const OPPOSITE = { Spring:'Autumn', Summer:'Winter', Autumn:'Spring', Winter:'Summer' };
+const BODY = {
+  Spring: 'The Sun is climbing back over the northern half of Earth. Days grow longer and warmer in the north, while the south cools toward autumn.',
+  Summer: 'The northern half leans toward the Sun. Sunlight strikes it straight-on, days are long, and it feels warm. The southern half is having winter.',
+  Autumn: 'The Sun slips back toward the equator. Northern days shorten and cool, while the south warms toward summer.',
+  Winter: 'The northern half leans away from the Sun. Sunlight arrives at a low, slanted angle, days are short, and it feels cold. The southern half is having summer.'
+};
+
+const _p=new THREE.Vector3(), _sunDir=new THREE.Vector3(), _v=new THREE.Vector3();
+let last=performance.now();
+function animate(){
+  requestAnimationFrame(animate);
+  const now=performance.now(); const dt=Math.min((now-last)/1000,0.05); last=now;
+  if (state.playing){ state.theta=(state.theta+dt*22)%360; slider.value=state.theta; }
+  const a=DEG(state.theta);
+
+  // Earth position + fixed-in-space tilt; spin for day/night
+  earthPivot.position.set(Math.cos(a)*ORBIT_R, 0, Math.sin(a)*ORBIT_R);
+  earth.rotation.y = now*0.0006; // steady visible spin (day/night)
+
+  // sunlight rays from Sun toward Earth's lit side
+  _sunDir.copy(earthPivot.position).multiplyScalar(-1).normalize();
+  const start = earthPivot.position.clone().addScaledVector(_sunDir, -3.2);
+  rayGroup.children.forEach((line,i)=>{
+    const off=(i-3)*0.42;
+    const perp=new THREE.Vector3(-_sunDir.z,0,_sunDir.x).multiplyScalar(off);
+    const up=new THREE.Vector3(0,1,0).multiplyScalar(((i%3)-1)*0.4);
+    const s=start.clone().add(perp).add(up);
+    const e=earthPivot.position.clone().add(perp).add(up).addScaledVector(_sunDir,-EARTH_R);
+    line.geometry.setFromPoints([s,e]);
+  });
+
+  // sub-solar latitude = arcsin(sin23.4 * sinθ)
+  const subLat = Math.asin(Math.sin(TILT)*Math.sin(a)) * 180/Math.PI;
+
+  // camera follows Earth loosely so the tilt stays readable
+  cam.target.lerp(earthPivot.position, 0.05);
+  cam.update();
+
+  SUN.uniforms.uTime.value = now*0.001;
+  if (starU) starU.uTime.value = now*0.001;
+
+  // labels
+  MARKERS.forEach(m=>{
+    m.mesh.getWorldPosition(_v); _v.project(camera);
+    if (_v.z>1){ m.label.style.opacity=0; return; }
+    m.label.style.left=(_v.x*0.5+0.5)*innerWidth+'px';
+    m.label.style.top=(_v.y*-0.5+0.5)*innerHeight-22+'px';
+    m.label.style.opacity=0.85;
+  });
+
+  // info
+  const n=seasonName(state.theta);
+  sTitle.textContent = 'Northern '+n;
+  sBody.textContent = BODY[n];
+  northSeason.textContent = n;
+  southSeason.textContent = OPPOSITE[n];
+  metaMonth.textContent = monthAt(state.theta);
+  metaSub.textContent = Math.abs(subLat)<1 ? 'Equator (0°)'
+    : (subLat>0?'+':'−') + Math.abs(subLat).toFixed(0) + '° (' + (subLat>0?'north':'south') + ')';
+  MARKERS.forEach(m=>m.btn.classList.toggle('active', Math.abs(((state.theta-m.deg+540)%360)-180)<8));
+
+  if (composer) composer.render(); else renderer.render(scene,camera);
+}
+requestAnimationFrame(()=>{ setTimeout(()=>document.getElementById('loader').classList.add('hidden'),250); animate(); });
+SPACE.buildNav('seasons');
+</script>
+</body>
+</html>

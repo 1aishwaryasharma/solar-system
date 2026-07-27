@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>What's in the Sky Tonight?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  #sky { position: fixed; inset: 0; z-index: 0; display: block; }
+  .info-panel { top: 104px; width: 340px; max-height: calc(100vh - 220px); overflow: auto; }
+  .info-title { font-size: 25px; line-height: 1.1; }
+  .sky-list { margin-top: 14px; border-top: 1px solid var(--line); }
+  .sky-item { display: flex; align-items: center; gap: 11px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+  .sky-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 6px currentColor; }
+  .sky-name { font-size: 15px; color: var(--ink); width: 74px; flex-shrink: 0; }
+  .sky-where { font-size: 12px; color: var(--ink-dim); line-height: 1.35; }
+  .sky-where .tag { font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase; display: block; margin-bottom: 1px; }
+  .sky-where.evening .tag { color: #f4c560; } .sky-where.morning .tag { color: #6ab0ff; }
+  .sky-where.allnight .tag { color: #8fd0a0; } .sky-where.hidden .tag { color: var(--ink-faint); }
+  .sky-where.scope .tag { color: var(--accent-warm); }
+  .info-wow { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13px; line-height: 1.5; color: var(--ink-dim); font-weight: 300; }
+  .info-wow .fact-tag { display:block; font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:0.2em; text-transform:uppercase; color:var(--accent); margin-bottom:6px; }
+  .date-controls { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 16px; z-index: 10; background: var(--panel); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--line); border-radius: 2px; padding: 12px 20px; max-width: calc(100vw - 32px); }
+  .date-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-dim); }
+  .date-value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--accent); min-width: 118px; text-align: center; }
+  .date-slider { -webkit-appearance: none; appearance: none; width: 220px; height: 2px; background: rgba(232,236,244,0.15); outline: none; }
+  .date-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 2px solid var(--bg); box-shadow: 0 0 0 1px var(--accent); }
+  .date-slider::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 2px solid var(--bg); }
+  .today-btn { background: transparent; border: 1px solid var(--line); color: var(--ink-dim); font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; padding: 6px 10px; border-radius: 2px; cursor: pointer; transition: all 0.2s; }
+  .today-btn:hover { color: var(--accent); border-color: rgba(244,197,96,0.4); }
+  @media (max-width: 820px) {
+    .info-panel { top: auto; bottom: 92px; left: 12px; right: 12px; width: auto; max-height: 44vh; }
+    .info-title { font-size: 19px; }
+    .date-slider { width: 120px; } .date-controls { bottom: 12px; padding: 10px 12px; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="sky"></canvas>
+
+<header class="header">
+  <div>
+    <h1 class="title">What's in the<br/><em>Sky Tonight?</em></h1>
+    <div class="subtitle">Planet Positions · A Sky Guide · Look Up</div>
+  </div>
+  <div class="header-meta">
+    <div>Date · <span id="meta-date">—</span></div>
+    <div>View · <span>From above the solar system</span></div>
+  </div>
+</header>
+
+<aside class="info-panel">
+  <div class="info-label">— Tonight's planets —</div>
+  <h2 class="info-title">Which ones can I see?</h2>
+  <p class="info-body">Planets shine by reflecting sunlight. Whether one shows up in the evening, the morning, or all night depends mostly on its <strong>angle from the Sun</strong>. Here's a rough guide for each planet, worked out from its real orbit:</p>
+  <div class="sky-list" id="sky-list"></div>
+  <div class="info-wow">
+    <span class="fact-tag">✦ Try it</span>
+    On a clear night, a bright planet shines with a steady light — it doesn't twinkle the way stars do. Slide the date forward to watch the fast inner planets race around the Sun.
+  </div>
+  <div class="info-wow">
+    <span class="fact-tag">About this guide</span>
+    This is worked out from each planet's <strong>angle from the Sun</strong> (its elongation). It's a good rough guide, but the exact time and spot a planet appears also depend on <strong>where you live</strong> and the time of night — so treat it as a starting point, then go look!
+  </div>
+</aside>
+
+<div class="date-controls">
+  <span class="date-label">Date</span>
+  <input type="range" class="date-slider" id="date-slider" min="0" max="800" step="1" value="0">
+  <span class="date-value" id="date-value">Today</span>
+  <button class="today-btn" id="today-btn">Today</button>
+</div>
+
+<script src="common.js"></script>
+<script>
+'use strict';
+const clamp = SPACE.clamp;
+
+// Mean orbital elements (J2000): L0 = mean longitude (deg), n = deg/day, a = semi-major axis (AU)
+const BODIES = [
+  { name:'Mercury', L0:252.25084, n:4.09233445, a:0.387098, dot:'#b9b2a6', naked:true },
+  { name:'Venus',   L0:181.97973, n:1.60213047, a:0.723332, dot:'#e8cd8a', naked:true },
+  { name:'Earth',   L0:100.46435, n:0.98560912, a:1.000000, dot:'#6ab0ff', earth:true },
+  { name:'Mars',    L0:355.45332, n:0.52403304, a:1.523679, dot:'#d0674a', naked:true },
+  { name:'Jupiter', L0:34.40438,  n:0.08308676, a:5.20260,  dot:'#d9b48a', naked:true },
+  { name:'Saturn',  L0:49.94432,  n:0.03344414, a:9.55491,  dot:'#e6d3a0', naked:true },
+  { name:'Uranus',  L0:313.23218, n:0.01172834, a:19.21845, dot:'#a9e0e2', naked:false },
+  { name:'Neptune', L0:304.88003, n:0.00598103, a:30.11039, dot:'#3f6fd8', naked:false }
+];
+const D2R = Math.PI/180, R2D = 180/Math.PI;
+const norm360 = x => ((x % 360) + 360) % 360;
+const norm180 = x => { let v = norm360(x); return v > 180 ? v - 360 : v; };
+
+function daysSinceJ2000(dateMs){ return dateMs/86400000 + 2440587.5 - 2451545.0; }
+
+function positions(dOffset){
+  const d = daysSinceJ2000(Date.now()) + dOffset;
+  const out = {};
+  BODIES.forEach(b => {
+    const L = norm360(b.L0 + b.n * d) * D2R;
+    out[b.name] = { x: b.a * Math.cos(L), y: b.a * Math.sin(L), a: b.a, Ldeg: L*R2D };
+  });
+  return out;
+}
+
+// classify each planet's visibility from Earth
+function skyInfo(pos){
+  const e = pos.Earth;
+  const sunLon = Math.atan2(-e.y, -e.x) * R2D; // geocentric direction to Sun
+  const list = [];
+  BODIES.forEach(b => {
+    if (b.earth) return;
+    const p = pos[b.name];
+    const gx = p.x - e.x, gy = p.y - e.y;
+    const planetLon = Math.atan2(gy, gx) * R2D;
+    const diff = norm180(planetLon - sunLon); // + = east of Sun (evening), − = west (morning)
+    const elong = Math.abs(diff);
+    let cls, tag, where;
+    if (elong < 12) { cls='hidden'; tag='Hidden'; where='Too close to the Sun to see right now.'; }
+    else if (elong > 150) { cls='allnight'; tag='All night'; where='Nearly opposite the Sun — up most of the night.'; }
+    else if (diff > 0) { cls='evening'; tag='Evening sky'; where='In the west after sunset.'; }
+    else { cls='morning'; tag='Morning sky'; where='In the east before dawn.'; }
+    if (!b.naked && cls!=='hidden') { cls='scope'; tag='Telescope'; where='Needs a telescope — ' + where.toLowerCase(); }
+    list.push({ name:b.name, dot:b.dot, cls, tag, where, elong: Math.round(elong) });
+  });
+  return list;
+}
+
+// ── canvas orrery ──
+const canvas = document.getElementById('sky');
+const ctx = canvas.getContext('2d');
+let W=0, H=0, DPR=1;
+const stars = [];
+function resize(){
+  DPR = Math.min(devicePixelRatio||1, 2);
+  W = innerWidth; H = innerHeight;
+  canvas.width = W*DPR; canvas.height = H*DPR;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  if (stars.length===0) for (let i=0;i<220;i++) stars.push({ x:Math.random(), y:Math.random(), r:Math.random()<0.1?1.6:0.8, ph:Math.random()*6.28 });
+}
+addEventListener('resize', resize); resize();
+
+function orbitRadiusPx(a, maxR){ return 34 + (maxR-34) * Math.sqrt(a/30.11); }
+
+function draw(dOffset, t){
+  const pos = positions(dOffset);
+  ctx.clearRect(0,0,W,H);
+  // starfield
+  for (const s of stars){
+    const tw = 0.5 + 0.5*Math.sin(t*1.5 + s.ph);
+    ctx.fillStyle = `rgba(232,236,244,${0.10 + 0.18*tw})`;
+    ctx.beginPath(); ctx.arc(s.x*W, s.y*H, s.r, 0, 6.283); ctx.fill();
+  }
+  const cx = W/2, cy = H/2;
+  const maxR = Math.min(W, H)*0.42;
+  // orbits
+  BODIES.forEach(b => {
+    const r = orbitRadiusPx(b.a, maxR);
+    ctx.strokeStyle = b.earth ? 'rgba(106,176,255,0.35)' : 'rgba(232,236,244,0.10)';
+    ctx.lineWidth = b.earth ? 1.4 : 1;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, 6.283); ctx.stroke();
+  });
+  // Sun glow
+  const g = ctx.createRadialGradient(cx,cy,0,cx,cy,26);
+  g.addColorStop(0,'rgba(255,240,200,0.95)'); g.addColorStop(0.5,'rgba(244,197,96,0.5)'); g.addColorStop(1,'rgba(244,197,96,0)');
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,26,0,6.283); ctx.fill();
+  ctx.fillStyle='#ffe9b0'; ctx.beginPath(); ctx.arc(cx,cy,7,0,6.283); ctx.fill();
+  // Earth→Sun sight line
+  const eR = orbitRadiusPx(1, maxR), eL = pos.Earth.Ldeg*D2R;
+  const ex = cx + Math.cos(eL)*eR, ey = cy + Math.sin(eL)*eR;
+  ctx.strokeStyle='rgba(106,176,255,0.25)'; ctx.setLineDash([3,4]);
+  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(ex,ey); ctx.stroke(); ctx.setLineDash([]);
+  // planets
+  ctx.font = "10px 'JetBrains Mono', monospace";
+  BODIES.forEach(b => {
+    const p = pos[b.name];
+    const r = orbitRadiusPx(b.a, maxR);
+    const L = p.Ldeg*D2R;
+    const x = cx + Math.cos(L)*r, y = cy + Math.sin(L)*r;
+    ctx.fillStyle = b.dot;
+    ctx.beginPath(); ctx.arc(x, y, b.earth?4.5:3.6, 0, 6.283); ctx.fill();
+    if (b.earth){ ctx.strokeStyle='rgba(106,176,255,0.8)'; ctx.lineWidth=1.4; ctx.beginPath(); ctx.arc(x,y,8,0,6.283); ctx.stroke(); }
+    ctx.fillStyle = 'rgba(232,236,244,0.7)';
+    ctx.fillText(b.earth?'Earth (us)':b.name, x+8, y-6);
+  });
+}
+
+// ── UI ──
+const listEl = document.getElementById('sky-list');
+const metaDate = document.getElementById('meta-date');
+const dateValue = document.getElementById('date-value');
+const slider = document.getElementById('date-slider');
+let offset = 0;
+
+function fmtDate(dOffset){
+  const d = new Date(Date.now() + dOffset*86400000);
+  return d.toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' });
+}
+function renderList(dOffset){
+  const info = skyInfo(positions(dOffset));
+  listEl.innerHTML = info.map(i => `
+    <div class="sky-item">
+      <span class="sky-dot" style="background:${i.dot};color:${i.dot}"></span>
+      <span class="sky-name">${i.name}</span>
+      <span class="sky-where ${i.cls}"><span class="tag">${i.tag} · ${i.elong}° from Sun</span>${i.where}</span>
+    </div>`).join('');
+}
+function update(){
+  metaDate.textContent = fmtDate(offset);
+  dateValue.textContent = offset===0 ? 'Today' : ('+' + offset + ' days');
+  renderList(offset);
+}
+slider.oninput = () => { offset = parseInt(slider.value,10); update(); };
+document.getElementById('today-btn').onclick = () => { offset=0; slider.value=0; update(); };
+update();
+
+let t0 = performance.now();
+function loop(){ requestAnimationFrame(loop); draw(offset, (performance.now()-t0)*0.001); }
+loop();
+SPACE.buildNav('sky');
+</script>
+</body>
+</html>
