@@ -238,11 +238,16 @@ try {
   composer.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
 } catch(e){ composer=null; }
 
+const cameraFitDistance = () => clamp(28 / Math.min(camera.aspect, 1), 28, 58);
+let fittedCameraDistance = cameraFitDistance();
 const cam = SPACE.createOrbitControls(camera, renderer.domElement, {
-  azimuth: 0.6, elevation: 0.7, distance: 22, minDistance: 6, maxDistance: 60, damping: 0.1
+  azimuth: 0.6, elevation: 0.7, distance: fittedCameraDistance, minDistance: 6, maxDistance: 60, damping: 0.1
 });
 addEventListener('resize', () => {
+  const wasFitted = Math.abs(cam.distanceTarget - fittedCameraDistance) < 0.01;
   camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
+  fittedCameraDistance = cameraFitDistance();
+  if (wasFitted) cam.distance = cam.distanceTarget = fittedCameraDistance;
   renderer.setSize(innerWidth,innerHeight);
   if (composer) composer.setSize(innerWidth,innerHeight);
 });
@@ -327,8 +332,7 @@ function animate(){
   // sub-solar latitude = arcsin(sin23.4 * sinθ)
   const subLat = Math.asin(Math.sin(TILT)*Math.sin(a)) * 180/Math.PI;
 
-  // camera follows Earth loosely so the tilt stays readable
-  cam.target.lerp(earthPivot.position, 0.05);
+  // Keep a stable, Sun-centred reference frame so only Earth moves around the orbit.
   cam.update();
 
   SUN.uniforms.uTime.value = motionNow*0.001;
