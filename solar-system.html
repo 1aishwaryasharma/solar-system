@@ -159,7 +159,7 @@
   </button>
   <div class="speed-group">
     <span class="speed-label">Speed</span>
-    <input type="range" class="speed-slider" id="speed-slider" min="-3" max="3" step="0.1" value="0">
+    <input type="range" class="speed-slider" id="speed-slider" min="-3" max="3" step="0.1" value="0" aria-label="Simulation speed">
     <span class="speed-value" id="speed-value">1.0×</span>
   </div>
   <div class="divider"></div>
@@ -272,7 +272,7 @@ const PLANETS = [
     wow: 'Mars has the tallest volcano in the whole solar system — three times higher than Mount Everest.' },
 
   { key: 'jupiter', name: 'Jupiter', num: '05', radiusKm: 69911, au: 5.203, periodDays: 4331, rotationHours: 9.93,
-    tiltDeg: 3.13, retro: false, moons: 95, g: 2.53, dot: '#d9b48a', type: 'gas', base: '#c9a06b',
+    tiltDeg: 3.13, retro: false, moons: 101, g: 2.53, dot: '#d9b48a', type: 'gas', base: '#c9a06b',
     bands: ['#c9a06b', '#ddc196', '#a9713f', '#e8d6b0', '#93613c', '#d0aa78'],
     spot: { x: 0.62, y: 0.60, rx: 0.09, ry: 0.05, color: '#b5573a' },
     moonList: [{ name: 'Io', orbit: 1.9, size: 0.10, period: 1.77, color: '#e8df8a' },
@@ -281,18 +281,18 @@ const PLANETS = [
                { name: 'Callisto', orbit: 3.6, size: 0.13, period: 16.7, color: '#7d7266' }],
     blurb: 'The biggest planet of all — a giant ball of gas with colourful stripes and a storm bigger than Earth.',
     facts: { size: 'More than <strong>1,300 Earths</strong> could fit inside!', day: 'It spins the fastest — one spin takes only <strong>10 hours</strong>.',
-      year: 'A year is almost <strong>12 Earth years</strong> long.', moons: 'At least <strong>95 moons</strong>!',
+      year: 'A year is almost <strong>12 Earth years</strong> long.', moons: '<strong>101 moons</strong> are officially recognized!',
       weight: 'At the cloud tops a 30&nbsp;kg kid would weigh about <strong>76&nbsp;kg</strong>.' },
     wow: 'The Great Red Spot is a storm bigger than the entire Earth that has been swirling for hundreds of years.' },
 
   { key: 'saturn', name: 'Saturn', num: '06', radiusKm: 58232, au: 9.537, periodDays: 10747, rotationHours: 10.66,
-    tiltDeg: 26.73, retro: false, moons: 146, g: 1.07, dot: '#e6d3a0', rings: true, type: 'gas', base: '#d8c69a',
+    tiltDeg: 26.73, retro: false, moons: 274, g: 1.07, dot: '#e6d3a0', rings: true, type: 'gas', base: '#d8c69a',
     bands: ['#d8c69a', '#e9dbb8', '#c9b184', '#efe3c6', '#cbb98d', '#e2d3aa'],
     moonList: [{ name: 'Titan', orbit: 3.2, size: 0.13, period: 15.9, color: '#c9a24b' },
                { name: 'Rhea', orbit: 2.5, size: 0.07, period: 4.5, color: '#b7b2a6' }],
     blurb: 'Famous for its dazzling rings, made of billions of chunks of ice and rock all circling the planet.',
     facts: { size: 'About <strong>760 Earths</strong> could fit inside.', day: 'A day is only about <strong>11 hours</strong> long.',
-      year: 'A year is about <strong>29 Earth years</strong>.', moons: 'At least <strong>146 moons</strong>!',
+      year: 'A year is about <strong>29 Earth years</strong>.', moons: '<strong>274 moons</strong> are confirmed!',
       weight: 'At the cloud tops a 30&nbsp;kg kid would weigh about <strong>32&nbsp;kg</strong>.' },
     wow: 'Saturn is so light for its size that it would float in a giant bathtub of water — if you could find one big enough!' },
 
@@ -314,7 +314,7 @@ const PLANETS = [
     moonList: [{ name: 'Triton', orbit: 2.4, size: 0.10, period: -5.9, color: '#cdd6d8' }],
     blurb: 'The farthest planet — a deep blue world with the fastest, wildest winds in the whole solar system.',
     facts: { size: 'About <strong>57 Earths</strong> could fit inside.', day: 'A day is about <strong>16 hours</strong> long.',
-      year: 'A year is <strong>165 Earth years</strong> — it hasn\'t finished one since we found it!', moons: 'At least <strong>16 moons</strong>.',
+      year: 'A year is <strong>165 Earth years</strong> — it completed its first post-discovery orbit in 2011!', moons: 'At least <strong>16 moons</strong>.',
       weight: 'At the cloud tops a 30&nbsp;kg kid would weigh about <strong>34&nbsp;kg</strong>.' },
     wow: 'Its winds scream faster than 2,000 km/h — faster than any jet plane on Earth.' }
 ];

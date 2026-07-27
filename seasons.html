@@ -96,7 +96,7 @@
   </button>
   <div class="speed-group">
     <span class="speed-label">Time of year</span>
-    <input type="range" class="speed-slider" id="year-slider" min="0" max="360" step="0.5" value="0">
+    <input type="range" class="speed-slider" id="year-slider" min="0" max="360" step="0.5" value="0" aria-label="Time of year">
   </div>
   <div class="divider"></div>
   <div class="toggle-group">
@@ -273,13 +273,13 @@ function animate(){
 
   // sunlight rays from Sun toward Earth's lit side
   _sunDir.copy(earthPivot.position).multiplyScalar(-1).normalize();
-  const start = earthPivot.position.clone().addScaledVector(_sunDir, -3.2);
+  const start = earthPivot.position.clone().addScaledVector(_sunDir, 3.2);
   rayGroup.children.forEach((line,i)=>{
     const off=(i-3)*0.42;
     const perp=new THREE.Vector3(-_sunDir.z,0,_sunDir.x).multiplyScalar(off);
     const up=new THREE.Vector3(0,1,0).multiplyScalar(((i%3)-1)*0.4);
     const s=start.clone().add(perp).add(up);
-    const e=earthPivot.position.clone().add(perp).add(up).addScaledVector(_sunDir,-EARTH_R);
+    const e=earthPivot.position.clone().add(perp).add(up).addScaledVector(_sunDir,EARTH_R);
     line.geometry.setFromPoints([s,e]);
   });
 
