@@ -29,7 +29,7 @@ html, body {
   overflow: hidden;
   background: var(--bg);
   color: var(--ink);
-  font-family: 'Fraunces', Georgia, serif;
+  font-family: 'Newsreader', Georgia, serif;
   font-feature-settings: 'ss01', 'ss02';
   -webkit-font-smoothing: antialiased;
 }
@@ -51,13 +51,13 @@ canvas { display: block; }
 .title { font-size: 22px; font-weight: 400; letter-spacing: 0.02em; line-height: 1.1; }
 .title em { font-style: italic; color: var(--accent); }
 .subtitle {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Fragment Mono', monospace;
   font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
   color: var(--ink-dim); margin-top: 6px;
 }
 .nav-link, .back-link {
   display: inline-block; margin-top: 10px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Fragment Mono', monospace;
   font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
   color: var(--ink-dim); text-decoration: none; pointer-events: auto;
   border-bottom: 1px solid transparent; padding-bottom: 2px;
@@ -67,7 +67,7 @@ canvas { display: block; }
 
 .header-meta {
   text-align: right;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Fragment Mono', monospace;
   font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
   color: var(--ink-dim); line-height: 1.6;
 }
@@ -85,7 +85,7 @@ canvas { display: block; }
   border-radius: 2px; padding: 22px 24px; z-index: 10;
 }
 .info-label {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Fragment Mono', monospace;
   font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;
   color: var(--accent); margin-bottom: 10px;
 }
@@ -117,7 +117,7 @@ canvas { display: block; }
 
 .speed-group { display: flex; align-items: center; gap: 12px; }
 .speed-label {
-  font-family: 'JetBrains Mono', monospace; font-size: 9px;
+  font-family: 'Fragment Mono', monospace; font-size: 9px;
   letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-dim);
 }
 .speed-slider {
@@ -136,7 +136,7 @@ canvas { display: block; }
   cursor: pointer; border: 2px solid var(--bg);
 }
 .speed-value {
-  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  font-family: 'Fragment Mono', monospace; font-size: 12px;
   color: var(--ink); min-width: 46px;
 }
 .divider { width: 1px; height: 24px; background: var(--line); }
@@ -144,7 +144,7 @@ canvas { display: block; }
 .toggle-group { display: flex; gap: 8px; flex-wrap: wrap; }
 .toggle-btn {
   background: transparent; border: 1px solid var(--line); color: var(--ink-dim);
-  padding: 7px 12px; font-family: 'JetBrains Mono', monospace;
+  padding: 7px 12px; font-family: 'Fragment Mono', monospace;
   font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase;
   border-radius: 2px; cursor: pointer; transition: all 0.2s; min-height: 32px;
 }
@@ -157,7 +157,7 @@ canvas { display: block; }
 /* ──── Hint ──── */
 .hint {
   position: fixed; bottom: 24px; left: 24px;
-  font-family: 'JetBrains Mono', monospace; font-size: 9px;
+  font-family: 'Fragment Mono', monospace; font-size: 9px;
   letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-faint);
   z-index: 10; line-height: 1.8;
 }
@@ -168,7 +168,7 @@ canvas { display: block; }
 
 /* ──── 3D labels ──── */
 .label-3d {
-  position: absolute; font-family: 'JetBrains Mono', monospace;
+  position: absolute; font-family: 'Fragment Mono', monospace;
   font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
   color: var(--ink); pointer-events: none; transform: translate(-50%, -50%);
   padding: 3px 7px; background: rgba(0,0,0,0.4); border: 1px solid var(--line);
@@ -188,7 +188,7 @@ canvas { display: block; }
   transition: opacity 0.8s, visibility 0s 0.8s;
 }
 .loader-text {
-  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  font-family: 'Fragment Mono', monospace; font-size: 10px;
   letter-spacing: 0.3em; text-transform: uppercase; color: var(--accent);
   animation: pulse 1.4s ease-in-out infinite;
 }
@@ -197,7 +197,7 @@ canvas { display: block; }
 /* ──── Scene switcher (SPACE.buildNav) ──── */
 .scene-nav {
   position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-  z-index: 30; font-family: 'JetBrains Mono', monospace;
+  z-index: 30; font-family: 'Fragment Mono', monospace;
 }
 .scene-nav-btn {
   background: var(--panel); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);

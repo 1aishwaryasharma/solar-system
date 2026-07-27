@@ -4,9 +4,26 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>How Far Apart? — A Space Walk</title>
+<meta name="description" content="How far apart are the planets, really? Walk the true distances of the solar system, with the Sun shrunk to a basketball. Free, ad-free astronomy for curious kids.">
+<meta name="theme-color" content="#050810">
+<link rel="canonical" href="https://solar-system.pages.dev/scale-walk.html">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="An Interactive Solar System">
+<meta property="og:title" content="How Far Apart? — A Space Walk">
+<meta property="og:description" content="How far apart are the planets, really? Walk the true distances of the solar system, with the Sun shrunk to a basketball. Free, ad-free astronomy for curious kids.">
+<meta property="og:url" content="https://solar-system.pages.dev/scale-walk.html">
+<meta property="og:image" content="https://solar-system.pages.dev/assets/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How Far Apart? — A Space Walk">
+<meta name="twitter:description" content="How far apart are the planets, really? Walk the true distances of the solar system, with the Sun shrunk to a basketball. Free and ad-free.">
+<meta name="twitter:image" content="https://solar-system.pages.dev/assets/og-cover.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css?v=20260727-2">
 <style>
   .info-panel { top: 104px; width: 350px; }
@@ -14,24 +31,24 @@
   .facts { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 4px; }
   .fact-row { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; line-height: 1.4; }
   .fact-row:last-child { border-bottom: none; }
-  .fact-key { flex-shrink: 0; width: 74px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-warm); padding-top: 2px; }
+  .fact-key { flex-shrink: 0; width: 74px; font-family: 'Fragment Mono', monospace; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-warm); padding-top: 2px; }
   .fact-val { color: var(--ink-dim); font-weight: 300; } .fact-val strong { color: var(--ink); font-weight: 500; }
   .analogy {
     margin-top: 16px; padding: 14px; border: 1px solid rgba(244,197,96,0.25); border-radius: 2px;
     background: rgba(244,197,96,0.05); font-size: 13px; line-height: 1.5; color: var(--ink-dim);
   }
   .analogy strong { color: var(--accent); font-weight: 500; }
-  .analogy .fact-tag { display:block; font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:0.2em; text-transform:uppercase; color:var(--accent-warm); margin-bottom:6px; }
+  .analogy .fact-tag { display:block; font-family:'Fragment Mono',monospace; font-size:9px; letter-spacing:0.2em; text-transform:uppercase; color:var(--accent-warm); margin-bottom:6px; }
   .stops { position: fixed; top: 50%; right: 24px; transform: translateY(-50%); display: flex; flex-direction: column; gap: 3px; z-index: 10; max-height: 84vh; overflow: auto; }
-  .stop-btn { background: var(--panel); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--line); border-radius: 2px; padding: 8px 14px; width: 168px; color: var(--ink); font-family: 'Fraunces', serif; font-size: 13px; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 11px; transition: all 0.2s; }
+  .stop-btn { background: var(--panel); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--line); border-radius: 2px; padding: 8px 14px; width: 168px; color: var(--ink); font-family: 'Newsreader', serif; font-size: 13px; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 11px; transition: all 0.2s; }
   .stop-btn:hover { background: var(--panel-bright); border-color: rgba(244,197,96,0.3); transform: translateX(-3px); }
   .stop-btn.active { border-color: var(--accent); background: rgba(244,197,96,0.08); }
   .stop-btn .s-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 6px currentColor; }
   .walk-controls { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 14px; z-index: 10; background: var(--panel); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--line); border-radius: 2px; padding: 12px 18px; }
-  .walk-btn { background: transparent; border: 1px solid var(--line); color: var(--ink); font-family: 'Fraunces', serif; font-size: 14px; padding: 9px 18px; border-radius: 2px; cursor: pointer; transition: all 0.2s; }
+  .walk-btn { background: transparent; border: 1px solid var(--line); color: var(--ink); font-family: 'Newsreader', serif; font-size: 14px; padding: 9px 18px; border-radius: 2px; cursor: pointer; transition: all 0.2s; }
   .walk-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
   .walk-btn:disabled { opacity: 0.3; cursor: default; }
-  .walk-progress { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: var(--ink-dim); min-width: 88px; text-align: center; }
+  .walk-progress { font-family: 'Fragment Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: var(--ink-dim); min-width: 88px; text-align: center; }
   @media (max-width: 820px) {
     .info-panel { top: auto; bottom: 120px; left: 12px; right: 12px; width: auto; max-height: 46vh; overflow: auto; }
     .info-title { font-size: 20px; }

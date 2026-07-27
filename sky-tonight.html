@@ -4,9 +4,26 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>What's in the Sky Tonight?</title>
+<meta name="description" content="Which planets can you see tonight? A live sky guide showing which planets are visible in the evening or morning, for any date. Free, ad-free astronomy for curious kids.">
+<meta name="theme-color" content="#050810">
+<link rel="canonical" href="https://solar-system.pages.dev/sky-tonight.html">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="An Interactive Solar System">
+<meta property="og:title" content="What's in the Sky Tonight?">
+<meta property="og:description" content="Which planets can you see tonight? A live sky guide showing which planets are visible in the evening or morning, for any date. Free, ad-free astronomy for curious kids.">
+<meta property="og:url" content="https://solar-system.pages.dev/sky-tonight.html">
+<meta property="og:image" content="https://solar-system.pages.dev/assets/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="What's in the Sky Tonight?">
+<meta name="twitter:description" content="Which planets can you see tonight? A live guide to which planets are up in the evening or morning, for any date. Free and ad-free.">
+<meta name="twitter:image" content="https://solar-system.pages.dev/assets/og-cover.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css?v=20260727-2">
 <style>
   #sky { position: fixed; inset: 0; z-index: 0; display: block; }
@@ -17,15 +34,15 @@
   .sky-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 6px currentColor; }
   .sky-name { font-size: 15px; color: var(--ink); width: 74px; flex-shrink: 0; }
   .sky-where { font-size: 12px; color: var(--ink-dim); line-height: 1.35; }
-  .sky-where .tag { font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase; display: block; margin-bottom: 1px; }
+  .sky-where .tag { font-family: 'Fragment Mono', monospace; font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase; display: block; margin-bottom: 1px; }
   .sky-where.evening .tag { color: #f4c560; } .sky-where.morning .tag { color: #6ab0ff; }
   .sky-where.allnight .tag { color: #8fd0a0; } .sky-where.hidden .tag { color: var(--ink-faint); }
   .sky-where.scope .tag { color: var(--accent-warm); }
   .info-wow { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13px; line-height: 1.5; color: var(--ink-dim); font-weight: 300; }
-  .info-wow .fact-tag { display:block; font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:0.2em; text-transform:uppercase; color:var(--accent); margin-bottom:6px; }
+  .info-wow .fact-tag { display:block; font-family:'Fragment Mono',monospace; font-size:9px; letter-spacing:0.2em; text-transform:uppercase; color:var(--accent); margin-bottom:6px; }
   .date-controls { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 16px; z-index: 10; background: var(--panel); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--line); border-radius: 2px; padding: 12px 20px; max-width: calc(100vw - 32px); }
-  .date-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-dim); }
-  .date-value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--accent); min-width: 118px; text-align: center; }
+  .date-label { font-family: 'Fragment Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-dim); }
+  .date-value { font-family: 'Fragment Mono', monospace; font-size: 13px; color: var(--accent); min-width: 118px; text-align: center; }
   .date-slider {
     -webkit-appearance: none; appearance: none; width: 220px; height: 24px;
     background: linear-gradient(rgba(232,236,244,0.15), rgba(232,236,244,0.15)) center / 100% 2px no-repeat;
@@ -33,7 +50,7 @@
   }
   .date-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 2px solid var(--bg); box-shadow: 0 0 0 1px var(--accent); }
   .date-slider::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 2px solid var(--bg); }
-  .today-btn { background: transparent; border: 1px solid var(--line); color: var(--ink-dim); font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; padding: 6px 10px; border-radius: 2px; cursor: pointer; transition: all 0.2s; }
+  .today-btn { background: transparent; border: 1px solid var(--line); color: var(--ink-dim); font-family: 'Fragment Mono', monospace; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; padding: 6px 10px; border-radius: 2px; cursor: pointer; transition: all 0.2s; }
   .today-btn:hover { color: var(--accent); border-color: rgba(244,197,96,0.4); }
   @media (max-width: 820px) {
     .info-panel { top: auto; bottom: 126px; left: 12px; right: 12px; width: auto; max-height: 44vh; }
@@ -184,7 +201,7 @@ function draw(dOffset, t){
   ctx.strokeStyle='rgba(106,176,255,0.25)'; ctx.setLineDash([3,4]);
   ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(ex,ey); ctx.stroke(); ctx.setLineDash([]);
   // planets
-  ctx.font = "10px 'JetBrains Mono', monospace";
+  ctx.font = "10px 'Fragment Mono', monospace";
   BODIES.forEach(b => {
     const p = pos[b.name];
     const r = orbitRadiusPx(b.a, maxR);

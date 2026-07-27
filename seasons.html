@@ -4,15 +4,32 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Why We Have Seasons</title>
+<meta name="description" content="See why Earth has seasons — it's the tilt, not the distance. An interactive model with solstices, equinoxes, and both hemispheres. Free, ad-free astronomy for kids.">
+<meta name="theme-color" content="#050810">
+<link rel="canonical" href="https://solar-system.pages.dev/seasons.html">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="An Interactive Solar System">
+<meta property="og:title" content="Why We Have Seasons">
+<meta property="og:description" content="See why Earth has seasons — it's the tilt, not the distance. An interactive model with solstices, equinoxes, and both hemispheres. Free, ad-free astronomy for kids.">
+<meta property="og:url" content="https://solar-system.pages.dev/seasons.html">
+<meta property="og:image" content="https://solar-system.pages.dev/assets/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Why We Have Seasons">
+<meta name="twitter:description" content="See why Earth has seasons — it's the tilt, not the distance. Solstices, equinoxes, and both hemispheres. Free and ad-free.">
+<meta name="twitter:image" content="https://solar-system.pages.dev/assets/og-cover.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css?v=20260727-2">
 <style>
   .info-panel { top: 104px; width: 340px; }
   .info-title { font-size: 26px; line-height: 1.1; }
   .info-sub {
-    font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em;
+    font-family: 'Fragment Mono', monospace; font-size: 10px; letter-spacing: 0.16em;
     text-transform: uppercase; color: var(--accent-warm); margin: 14px 0 4px;
   }
   .hemi-row { display: flex; gap: 10px; margin-top: 8px; }
@@ -21,7 +38,7 @@
     font-size: 13px; color: var(--ink-dim);
   }
   .hemi .h-label {
-    font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 0.16em;
+    font-family: 'Fragment Mono', monospace; font-size: 8px; letter-spacing: 0.16em;
     text-transform: uppercase; color: var(--ink-faint); display: block; margin-bottom: 4px;
   }
   .hemi .h-season { color: var(--ink); font-size: 15px; }
@@ -30,7 +47,7 @@
     font-size: 13px; line-height: 1.5; color: var(--ink-dim); font-weight: 300;
   }
   .info-wow .fact-tag {
-    display: block; font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    display: block; font-family: 'Fragment Mono', monospace; font-size: 9px;
     letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px;
   }
   .seasons-picker {
@@ -40,7 +57,7 @@
   .season-btn {
     background: var(--panel); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--line); border-radius: 2px; padding: 11px 16px; width: 210px;
-    color: var(--ink); font-family: 'Fraunces', serif; font-size: 13px; cursor: pointer;
+    color: var(--ink); font-family: 'Newsreader', serif; font-size: 13px; cursor: pointer;
     text-align: left; transition: all 0.22s ease; display: flex; align-items: center; gap: 12px;
   }
   .season-btn:hover { background: var(--panel-bright); border-color: rgba(244,197,96,0.3); transform: translateX(-3px); }

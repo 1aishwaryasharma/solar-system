@@ -4,9 +4,26 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Sun &amp; Its Planets — A Grand Tour</title>
+<meta name="description" content="Take a grand tour of all eight planets in an interactive 3D solar system — real orbits, moons, comets, and kid-friendly facts. Free, ad-free astronomy for curious kids.">
+<meta name="theme-color" content="#050810">
+<link rel="canonical" href="https://solar-system.pages.dev/solar-system.html">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="An Interactive Solar System">
+<meta property="og:title" content="The Sun &amp; Its Planets — A Grand Tour">
+<meta property="og:description" content="Take a grand tour of all eight planets in an interactive 3D solar system — real orbits, moons, comets, and kid-friendly facts. Free, ad-free astronomy for curious kids.">
+<meta property="og:url" content="https://solar-system.pages.dev/solar-system.html">
+<meta property="og:image" content="https://solar-system.pages.dev/assets/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The Sun &amp; Its Planets — A Grand Tour">
+<meta name="twitter:description" content="Tour all eight planets in an interactive 3D solar system — real orbits, moons, comets, and kid-friendly facts. Free and ad-free.">
+<meta name="twitter:image" content="https://solar-system.pages.dev/assets/og-cover.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css?v=20260727-2">
 <style>
   /* ── Page-specific styling for the grand tour ── */
@@ -21,7 +38,7 @@
   .fact-row:last-child { border-bottom: none; }
   .fact-key {
     flex-shrink: 0; width: 62px;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Fragment Mono', monospace;
     font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
     color: var(--accent-warm); padding-top: 2px;
   }
@@ -33,7 +50,7 @@
     font-size: 13px; line-height: 1.5; color: var(--ink-dim); font-weight: 300;
   }
   .info-wow .fact-tag {
-    display: block; font-family: 'JetBrains Mono', monospace;
+    display: block; font-family: 'Fragment Mono', monospace;
     font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;
     color: var(--accent); margin-bottom: 6px;
   }
@@ -48,7 +65,7 @@
     backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--line); border-radius: 2px;
     padding: 8px 14px; color: var(--ink);
-    font-family: 'Fraunces', serif; font-size: 13px; font-weight: 400;
+    font-family: 'Newsreader', serif; font-size: 13px; font-weight: 400;
     cursor: pointer; text-align: left; width: 176px;
     display: flex; align-items: center; gap: 11px;
     transition: all 0.22s ease;
@@ -60,12 +77,12 @@
   .body-btn.active { border-color: var(--accent); background: rgba(244, 197, 96, 0.08); }
   .body-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 6px currentColor; }
   .body-btn .num {
-    font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    font-family: 'Fragment Mono', monospace; font-size: 9px;
     color: var(--ink-faint); letter-spacing: 0.1em; margin-left: auto;
   }
   .body-btn.active .num { color: var(--accent); }
   .body-sep {
-    font-family: 'JetBrains Mono', monospace; font-size: 8px;
+    font-family: 'Fragment Mono', monospace; font-size: 8px;
     letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-faint);
     padding: 8px 4px 3px; margin-top: 2px;
   }
@@ -96,7 +113,7 @@
   .stage-actions { display: flex; gap: 10px; justify-content: center; margin-top: 14px; }
   .stage-btn {
     background: transparent; border: 1px solid var(--line); color: var(--ink);
-    font-family: 'Fraunces', serif; font-size: 13px; padding: 7px 16px; border-radius: 2px; cursor: pointer; transition: all 0.2s;
+    font-family: 'Newsreader', serif; font-size: 13px; padding: 7px 16px; border-radius: 2px; cursor: pointer; transition: all 0.2s;
   }
   .stage-btn:hover { border-color: var(--accent); color: var(--accent); }
   .stage-btn.ghost { color: var(--ink-dim); }
