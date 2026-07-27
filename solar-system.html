@@ -77,10 +77,10 @@
     max-width: min(560px, calc(100vw - 32px)); text-align: center;
     font-size: 12px; line-height: 1.5; color: var(--ink-dim); font-weight: 300;
     background: var(--panel); border: 1px solid var(--line); border-radius: 2px;
-    padding: 10px 16px; z-index: 9; opacity: 0; pointer-events: none;
-    transition: opacity 0.4s;
+    padding: 10px 16px; z-index: 9; opacity: 0; pointer-events: none; visibility: hidden;
+    transition: opacity 0.4s, visibility 0s 0.4s;
   }
-  .scale-note.show { opacity: 1; }
+  .scale-note.show { opacity: 1; visibility: visible; transition: opacity 0.4s; }
   .scale-note strong { color: var(--accent); font-weight: 500; }
 
   .stage {
@@ -116,6 +116,8 @@
     .hint { display: none; }
     .divider { display: none; }
     .scale-note { bottom: 140px; font-size: 11px; }
+    body.mode-active .info-panel { display: none; }
+    .stage { bottom: 210px; width: calc(100vw - 32px); box-sizing: border-box; }
   }
 </style>
 </head>
@@ -184,7 +186,7 @@
   </div>
 </div>
 
-<div class="scale-note" id="scale-note">
+<div class="scale-note" id="scale-note" aria-hidden="true">
   <strong>True scale.</strong> Now the planets are the right sizes next to each other, and their
   orbits are spaced the way they really are — see how tiny the worlds are and how much empty space
   lies between them. (The planets are still drawn a little bigger than real life, or you couldn't see them at all!)
@@ -751,6 +753,7 @@ toggleScale.addEventListener('click', () => {
   sim.trueScale = !sim.trueScale;
   toggleScale.classList.toggle('active', sim.trueScale);
   scaleNote.classList.toggle('show', sim.trueScale);
+  scaleNote.setAttribute('aria-hidden', String(!sim.trueScale));
   metaScale.textContent = sim.trueScale ? 'True scale' : 'Made to fit';
   if (!sim.follow) cam.distanceTarget = sim.trueScale ? 640 : 42;
 });
@@ -942,7 +945,11 @@ function animate() {
 }
 
 requestAnimationFrame(() => {
-  setTimeout(() => document.getElementById('loader').classList.add('hidden'), 250);
+  setTimeout(() => {
+    const loader = document.getElementById('loader');
+    loader.classList.add('hidden');
+    loader.setAttribute('aria-hidden', 'true');
+  }, 250);
   animate();
 });
 
@@ -972,6 +979,7 @@ function stopModes() {
   tour.active = false; quiz.active = false;
   if (tour.timer) { clearTimeout(tour.timer); tour.timer = null; }
   stageEl.classList.remove('show');
+  document.body.classList.remove('mode-active');
   btnTour.classList.remove('active'); btnQuiz.classList.remove('active');
 }
 function showTourStep() {
@@ -993,6 +1001,7 @@ function startTour() {
   btnTour.classList.add('active');
   stageNext.style.display = '';
   stageEl.classList.add('show');
+  document.body.classList.add('mode-active');
   showTourStep();
 }
 
@@ -1021,6 +1030,7 @@ function startQuiz() {
   btnQuiz.classList.add('active');
   stageNext.style.display = 'none';
   stageEl.classList.add('show');
+  document.body.classList.add('mode-active');
   showQuizQuestion();
 }
 function quizPick(key) {

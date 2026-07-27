@@ -315,7 +315,7 @@ function animate(){
 
   if (composer) composer.render(); else renderer.render(scene,camera);
 }
-requestAnimationFrame(()=>{ setTimeout(()=>document.getElementById('loader').classList.add('hidden'),250); animate(); });
+requestAnimationFrame(()=>{ setTimeout(()=>{ const loader=document.getElementById('loader'); loader.classList.add('hidden'); loader.setAttribute('aria-hidden','true'); },250); animate(); });
 SPACE.buildNav('seasons');
 </script>
 </body>
