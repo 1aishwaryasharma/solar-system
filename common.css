@@ -95,6 +95,7 @@ canvas { display: block; }
 }
 .info-body { font-size: 14px; line-height: 1.55; color: var(--ink-dim); font-weight: 300; }
 .info-body strong { color: var(--ink); font-weight: 500; }
+.mobile-info-toggle { display: none; }
 
 /* ──── Bottom Controls ──── */
 .controls {
@@ -228,6 +229,62 @@ canvas { display: block; }
 @media (max-width: 820px) {
   .scene-nav { top: 12px; }
   .scene-nav-btn { padding: 6px 10px; font-size: 8px; }
+
+  /* Keep the scene visible on phones. Educational copy becomes a small
+     title drawer and is available on demand instead of covering the model. */
+  .info-panel.mobile-info-panel {
+    padding: 12px 64px 12px 16px;
+    overflow: auto;
+    transition: max-height 0.25s ease, padding 0.25s ease;
+  }
+  .info-panel.mobile-info-panel:not(.is-expanded) {
+    max-height: 66px !important;
+    overflow: hidden;
+  }
+  .info-panel.mobile-info-panel:not(.is-expanded) > :not(.info-label):not(.info-title):not(.mobile-info-toggle) {
+    display: none !important;
+  }
+  .info-panel.mobile-info-panel > .info-label {
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .info-panel.mobile-info-panel > .info-title {
+    margin-bottom: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .info-panel.mobile-info-panel.is-expanded > .info-title {
+    margin-bottom: 12px;
+    white-space: normal;
+  }
+  .mobile-info-toggle {
+    display: inline-flex;
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
+    align-items: center;
+    justify-content: center;
+    min-width: 42px;
+    min-height: 32px;
+    padding: 6px 8px;
+    border: 1px solid rgba(244, 197, 96, 0.28);
+    border-radius: 2px;
+    background: rgba(244, 197, 96, 0.06);
+    color: var(--accent);
+    font-family: 'Fragment Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .info-panel.mobile-info-panel.is-expanded .mobile-info-toggle {
+    top: 12px;
+    transform: none;
+  }
 }
 
 @media (max-height: 520px) and (orientation: landscape) {

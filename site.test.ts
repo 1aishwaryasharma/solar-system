@@ -81,6 +81,14 @@ test("shared assets use a consistent cache-busting version", () => {
   expect(versions.size).toBe(1);
 });
 
+test("interactive info panels use the shared mobile drawer", () => {
+  const commonJs = readFileSync("common.js", "utf8");
+  const commonCss = readFileSync("common.css", "utf8");
+  expect(commonJs).toContain("initMobileInfoPanels");
+  expect(commonJs).toContain("aria-expanded");
+  expect(commonCss).toContain(".info-panel.mobile-info-panel:not(.is-expanded)");
+});
+
 test("current mission figures remain current", () => {
   const missions = readFileSync("missions.html", "utf8");
   expect(missions).toContain("about <b>24 hours</b>");

@@ -367,6 +367,44 @@ float fbm(vec3 p) {
     document.body.appendChild(nav);
   }
 
+  // ── Compact educational panels on mobile ──
+  function initMobileInfoPanels() {
+    document.querySelectorAll('.info-panel').forEach((panel, index) => {
+      if (panel.classList.contains('mobile-info-panel')) return;
+
+      panel.classList.add('mobile-info-panel');
+      panel.classList.remove('is-expanded');
+
+      if (!panel.id) panel.id = 'info-panel-' + (index + 1);
+
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'mobile-info-toggle';
+      toggle.textContent = 'Read';
+      toggle.setAttribute('aria-controls', panel.id);
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.setAttribute('aria-label', 'Read the full explanation');
+
+      toggle.addEventListener('click', () => {
+        const expanded = panel.classList.toggle('is-expanded');
+        toggle.textContent = expanded ? 'Close' : 'Read';
+        toggle.setAttribute('aria-expanded', String(expanded));
+        toggle.setAttribute(
+          'aria-label',
+          expanded ? 'Close the full explanation' : 'Read the full explanation'
+        );
+      });
+
+      panel.appendChild(toggle);
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMobileInfoPanels, { once: true });
+  } else {
+    initMobileInfoPanels();
+  }
+
   return {
     clamp,
     prefersReducedMotion,
@@ -376,6 +414,7 @@ float fbm(vec3 p) {
     createSun,
     createOrbitControls,
     projectToScreen,
-    buildNav
+    buildNav,
+    initMobileInfoPanels
   };
 })();
