@@ -11,8 +11,8 @@ An accessible, responsive collection of interactive solar-system experiences:
 
 ## Run locally
 
-Open `index.html` in a modern browser, or serve the directory with any static
-web server:
+Serve the directory with any static web server (ES modules will not load
+from `file://`):
 
 ```sh
 python3 -m http.server 8000
@@ -20,9 +20,10 @@ python3 -m http.server 8000
 
 Then visit <http://localhost:8000>.
 
-Three.js (r185, ES modules) is vendored under `vendor/three/`, so the 3D scenes
-work fully offline once the site is served. Pages load it through an import map
-(`three` → `vendor/three/three.module.min.js`).
+Three.js (r185, ES modules) is vendored under `vendor/three/`, so the 3D
+scenes work fully offline once the site is served. WebGL pages load it
+through an import map (`three` → `vendor/three/three.module.min.js`).
+Missions and Sky Tonight import only `chrome.js` and never load Three.js.
 
 ## Verify
 

@@ -81,9 +81,9 @@ describe.each(pages)("%s", (file) => {
 });
 
 test("shared scene navigation points to every live page", () => {
-  const common = readFileSync("common.js", "utf8");
+  const chrome = readFileSync("chrome.js", "utf8");
   for (const page of pages.filter((file) => !file.includes(" (1)"))) {
-    expect(common, `navigation does not include ${page}`).toContain(`href: '${page}'`);
+    expect(chrome, `navigation does not include ${page}`).toContain(`href: '${page}'`);
   }
 });
 
@@ -114,13 +114,19 @@ test('Three.js is loaded as a local ES module', () => {
     expect(html).toContain('three.module.min.js');
     expect(html).not.toContain('three.min.js');
   }
+  for (const page of ['missions.html', 'sky-tonight.html']) {
+    const html = readFileSync(page, 'utf8');
+    expect(html).toContain("./chrome.js");
+    expect(html).not.toContain('type="importmap"');
+    expect(html).not.toContain('common.js');
+  }
 });
 
 test("interactive info panels use the shared mobile drawer", () => {
-  const commonJs = readFileSync("common.js", "utf8");
+  const chromeJs = readFileSync("chrome.js", "utf8");
   const commonCss = readFileSync("common.css", "utf8");
-  expect(commonJs).toContain("initMobileInfoPanels");
-  expect(commonJs).toContain("aria-expanded");
+  expect(chromeJs).toContain("initMobileInfoPanels");
+  expect(chromeJs).toContain("aria-expanded");
   expect(commonCss).toContain(".info-panel.mobile-info-panel:not(.is-expanded)");
 });
 
