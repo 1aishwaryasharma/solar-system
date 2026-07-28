@@ -506,7 +506,8 @@ float fbm(vec3 p) {
     }
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    // 1.0 keeps day-side albedo readable under HDR bloom; 1.1 blew Earth white.
+    // Half-float bloom sees pre-tonemap luminance; keep exposure at 1.0 so
+    // lit albedo stays below the bloom floor instead of washing out.
     renderer.toneMappingExposure = 1.0;
     if (opts.canvasLabel) {
       renderer.domElement.setAttribute('tabindex', '0');
