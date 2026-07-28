@@ -28,6 +28,15 @@ describe.each(pages)("%s", (file) => {
     }
   });
 
+  test('scripts are served locally', () => {
+    const srcs = [...html.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["']/gi)].map(
+      (match) => match[1],
+    );
+    for (const src of srcs) {
+      expect(src).not.toMatch(/^(?:https?:)?\/\//);
+    }
+  });
+
   test("inline scripts parse", () => {
     for (const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)) {
       expect(() => new Function(match[1])).not.toThrow();

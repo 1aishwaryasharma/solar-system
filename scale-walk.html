@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>How Far Apart? — A Space Walk</title>
 <meta name="description" content="How far apart are the planets, really? Walk the true distances of the solar system, with the Sun shrunk to a basketball. Free, ad-free astronomy for curious kids.">
 <meta name="theme-color" content="#050810">
@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=20260728-1">
+<link rel="stylesheet" href="common.css?v=20260728-2">
 <style>
   .info-panel { top: 104px; width: 350px; }
   .info-title { font-size: 26px; line-height: 1.1; }
@@ -110,17 +110,17 @@
   <button type="button" class="walk-btn" id="next">Travel ›</button>
 </div>
 
-<div class="hint"><span class="key">Drag</span> to look around · <span class="key">Scroll</span> to zoom</div>
+<div class="hint"><span class="key">Drag</span> to look around · <span class="key">Scroll</span> to zoom · <span class="key">← →</span> to travel</div>
 
-<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/shaders/GammaCorrectionShader.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
-<script src="common.js?v=20260728-1"></script>
+<script src="vendor/three/three.min.js"></script>
+<script src="vendor/three/CopyShader.js"></script>
+<script src="vendor/three/LuminosityHighPassShader.js"></script>
+<script src="vendor/three/GammaCorrectionShader.js"></script>
+<script src="vendor/three/EffectComposer.js"></script>
+<script src="vendor/three/RenderPass.js"></script>
+<script src="vendor/three/ShaderPass.js"></script>
+<script src="vendor/three/UnrealBloomPass.js"></script>
+<script src="common.js?v=20260728-2"></script>
 <script>
 'use strict';
 const clamp = SPACE.clamp;

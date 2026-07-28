@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Sol · Terra · Luna — A Light Study</title>
 <meta name="description" content="An interactive 3D model of the Sun, Earth, and Moon — watch day and night, the Moon's phases, and eclipses unfold. Free, ad-free astronomy for curious kids.">
 <meta name="theme-color" content="#050810">
@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=20260728-1">
+<link rel="stylesheet" href="common.css?v=20260728-2">
 <style>
   /* Shared design tokens & component styles live in common.css.
      Only page-specific rules for the light study remain here. */
@@ -231,23 +231,23 @@
 </div>
 
 <div class="hint">
-  <span class="key">Drag</span> to rotate · <span class="key">Scroll</span> to zoom
+  <span class="key">Drag</span> or <span class="key">Arrows</span> to rotate · <span class="key">Scroll</span> or <span class="key">+ −</span> to zoom
 </div>
 
 <div class="label-3d sun" id="label-sun" aria-hidden="true">Sun</div>
 <div class="label-3d earth" id="label-earth" aria-hidden="true">Earth</div>
 <div class="label-3d moon" id="label-moon" aria-hidden="true">Moon</div>
 
-<script src="common.js?v=20260728-1"></script>
-<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/shaders/GammaCorrectionShader.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/shaders/FXAAShader.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script src="common.js?v=20260728-2"></script>
+<script src="vendor/three/three.min.js"></script>
+<script src="vendor/three/CopyShader.js"></script>
+<script src="vendor/three/LuminosityHighPassShader.js"></script>
+<script src="vendor/three/GammaCorrectionShader.js"></script>
+<script src="vendor/three/FXAAShader.js"></script>
+<script src="vendor/three/EffectComposer.js"></script>
+<script src="vendor/three/RenderPass.js"></script>
+<script src="vendor/three/ShaderPass.js"></script>
+<script src="vendor/three/UnrealBloomPass.js"></script>
 <script>
 'use strict';
 
@@ -264,7 +264,9 @@ const camera = new THREE.PerspectiveCamera(
 );
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-renderer.domElement.setAttribute('aria-hidden', 'true');
+renderer.domElement.setAttribute('tabindex', '0');
+renderer.domElement.setAttribute('role', 'img');
+renderer.domElement.setAttribute('aria-label', '3D model of the Sun, Earth, and Moon. Focus it and use the arrow keys to rotate, plus and minus to zoom.');
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
@@ -829,7 +831,8 @@ function createMoonTextures() {
   return { color, bump };
 }
 
-const textureLoader = new THREE.TextureLoader();
+const loadingManager = new THREE.LoadingManager();
+const textureLoader = new THREE.TextureLoader(loadingManager);
 
 function loadEarthTexture(path, colorTexture = false) {
   const texture = textureLoader.load(path);
@@ -1093,6 +1096,8 @@ dom.addEventListener('touchmove', (e) => {
   }
 }, { passive: false });
 dom.addEventListener('touchend', () => { touchPrev = null; pinchPrev = null; });
+
+SPACE.bindCameraKeys(cam, { maxDistance: 55, minDistance: 3 });
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -1486,15 +1491,19 @@ function animate() {
   else renderer.render(scene, camera);
 }
 
-// Hide loader after first frame
-requestAnimationFrame(() => {
-  setTimeout(() => {
-    const loader = document.getElementById('loader');
-    loader.classList.add('hidden');
-    loader.setAttribute('aria-hidden', 'true');
-  }, 250);
-  animate();
-});
+// Hold the loader until the photographic textures actually land; the safety
+// timeout guarantees a failed request can never trap anyone on the loader.
+let loaderHidden = false;
+function hideLoader() {
+  if (loaderHidden) return;
+  loaderHidden = true;
+  const loader = document.getElementById('loader');
+  loader.classList.add('hidden');
+  loader.setAttribute('aria-hidden', 'true');
+}
+loadingManager.onLoad = hideLoader;
+setTimeout(hideLoader, 5000);
+requestAnimationFrame(() => { animate(); });
 
 // Start with free preset info
 applyPreset('free');

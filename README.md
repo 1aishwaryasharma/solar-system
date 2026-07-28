@@ -20,8 +20,8 @@ python3 -m http.server 8000
 
 Then visit <http://localhost:8000>.
 
-The 3D scenes load Three.js from unpkg, so they require an internet connection
-even when the site itself is served locally.
+Three.js (r128, UMD build) is vendored under `vendor/three/`, so the 3D scenes
+work fully offline once the site is served.
 
 ## Verify
 

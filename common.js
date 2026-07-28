@@ -291,6 +291,36 @@ float fbm(vec3 p) {
     return cam;
   }
 
+  // ── Keyboard camera control (arrows rotate, +/− zoom) ──
+  // Works with any cam exposing azimuthTarget / elevationTarget /
+  // distanceTarget. Ignored while a form field has focus so native
+  // behaviours (e.g. arrow keys on range sliders) are preserved.
+  function bindCameraKeys(cam, opts) {
+    opts = opts || {};
+    const rotStep = opts.rotateStep != null ? opts.rotateStep : 0.08;
+    const elStep = opts.elevateStep != null ? opts.elevateStep : 0.06;
+    const minD = opts.minDistance != null ? opts.minDistance : 1.5;
+    const maxDFn = typeof opts.maxDistance === 'function'
+      ? opts.maxDistance : (() => (opts.maxDistance != null ? opts.maxDistance : 100));
+    const EL = Math.PI / 2 - 0.05;
+    window.addEventListener('keydown', (e) => {
+      if (e.altKey || e.ctrlKey || e.metaKey) return;
+      const t = e.target;
+      if (t && t.closest && t.closest('input, select, textarea, [contenteditable]')) return;
+      let handled = true;
+      switch (e.key) {
+        case 'ArrowLeft':  cam.azimuthTarget += rotStep; break;
+        case 'ArrowRight': cam.azimuthTarget -= rotStep; break;
+        case 'ArrowUp':    cam.elevationTarget = clamp(cam.elevationTarget + elStep, -EL, EL); break;
+        case 'ArrowDown':  cam.elevationTarget = clamp(cam.elevationTarget - elStep, -EL, EL); break;
+        case '+': case '=': cam.distanceTarget = clamp(cam.distanceTarget * 0.9, minD, maxDFn()); break;
+        case '-': case '_': cam.distanceTarget = clamp(cam.distanceTarget * 1.12, minD, maxDFn()); break;
+        default: handled = false;
+      }
+      if (handled) e.preventDefault();
+    });
+  }
+
   // ── Project a 3D object to a screen-space label element ──
   // Lazily created so pages without THREE (e.g. sky-tonight, missions) can still
   // use buildNav — common.js must not touch THREE at load time.
@@ -406,15 +436,16 @@ float fbm(vec3 p) {
   }
 
   return {
-    clamp,
-    prefersReducedMotion,
-    GLSL_NOISE,
-    createStarfield,
-    glowShell,
-    createSun,
-    createOrbitControls,
-    projectToScreen,
+    bindCameraKeys,
     buildNav,
-    initMobileInfoPanels
+    clamp,
+    createOrbitControls,
+    createStarfield,
+    createSun,
+    GLSL_NOISE,
+    glowShell,
+    initMobileInfoPanels,
+    prefersReducedMotion,
+    projectToScreen
   };
 })();
