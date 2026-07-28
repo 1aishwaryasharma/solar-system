@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=20260728-5">
+<link rel="stylesheet" href="common.css?v=20260728-7">
 <style>
   /* this page scrolls, unlike the fixed 3D scenes */
   html, body { overflow-x: hidden; overflow-y: auto; }
@@ -74,6 +74,11 @@
 <body>
 
 <canvas id="bg" aria-hidden="true"></canvas>
+<noscript>
+  <div class="loader" role="alert" style="z-index:101">
+    <div class="loader-text" style="animation:none">JavaScript is required to explore this page.</div>
+  </div>
+</noscript>
 
 <header class="header">
   <div>
@@ -96,7 +101,7 @@
   <div class="foot">Every mission here is real · Ask a grown-up to help you look up their latest pictures</div>
 </main>
 
-<script src="common.js?v=20260728-5"></script>
+<script src="common.js?v=20260728-7"></script>
 <script>
 'use strict';
 const MISSIONS = [
