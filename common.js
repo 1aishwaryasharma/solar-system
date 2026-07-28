@@ -303,8 +303,20 @@ float fbm(vec3 p) {
     const fxaaPass = opts.fxaaPass || null;
     const shadowLight = opts.shadowLight || null;
     const basePR = Math.min(window.devicePixelRatio || 1, 2);
-    const PR_STEPS = [basePR, Math.min(basePR, 1.5), 1.25, 1];
+    // Cap every later tier by basePR so degradation never raises the
+    // pixel ratio (e.g. DPR 1 would otherwise jump to 1.25 at tier 2).
+    const PR_STEPS = [
+      basePR,
+      Math.min(basePR, 1.5),
+      Math.min(basePR, 1.25),
+      Math.min(basePR, 1)
+    ];
     const SHADOW_STEPS = [2048, 2048, 1024, 512];
+    // Ignore gaps larger than this — typically tab suspension, not a slow frame.
+    const MAX_SAMPLE_S = 0.1;
+    // Upgrade needs to be reachable on 60 Hz displays (~16.7 ms vsync).
+    const UPGRADE_MS = 18;
+    const DOWNGRADE_MS = 24;
     let tier = 0, ema = 16, cooldownUntil = 0, headroomTime = 0;
 
     function apply() {
@@ -331,12 +343,13 @@ float fbm(vec3 p) {
 
     return {
       frame(rawDt) {
+        if (!(rawDt > 0) || rawDt > MAX_SAMPLE_S) return;
         ema = ema * 0.95 + rawDt * 1000 * 0.05;
         const now = performance.now();
         if (now < cooldownUntil) return;
-        if (ema > 24 && tier < 3) {
+        if (ema > DOWNGRADE_MS && tier < 3) {
           tier++; apply(); cooldownUntil = now + 4000; headroomTime = 0;
-        } else if (ema < 13 && tier > 0) {
+        } else if (ema < UPGRADE_MS && tier > 0) {
           headroomTime += rawDt;
           if (headroomTime > 6) {
             tier--; apply(); cooldownUntil = now + 4000; headroomTime = 0;
