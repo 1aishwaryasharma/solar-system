@@ -3,13 +3,28 @@
    scenes. Only the genuinely identical building blocks live here
    (noise, starfield, the Sun, orbit-camera controls, label
    projection); each scene keeps its own bespoke logic inline.
-   Requires the global THREE (loaded via the r128 UMD build).
+   Three.js r185 ES modules + postprocessing addons.
+   Chrome helpers (nav, mobile drawers) live in chrome.js so
+   non-WebGL pages never pull Three.js.
    ───────────────────────────────────────────────────────── */
-'use strict';
-window.SPACE = (function () {
+import {
+  buildNav,
+  clamp,
+  initMobileHints,
+  initMobileInfoPanels,
+  prefersReducedMotion,
+  setText
+} from './chrome.js';
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { FXAAPass } from 'three/addons/postprocessing/FXAAPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
-  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+'use strict';
+
+const SPACE = (function () {
 
   // Deterministic PRNG for procedural content (belts, textures, etc.).
   function seededRandom(seed) {
@@ -341,8 +356,10 @@ float fbm(vec3 p) {
         composer.setPixelRatio(pr);
         composer.setSize(w, h);
       }
-      if (fxaaPass) {
-        fxaaPass.material.uniforms.resolution.value.set(1 / (w * pr), 1 / (h * pr));
+      // composer.setSize already resizes FXAAPass; keep a direct path for
+      // scenes that wire FXAA without a composer reference.
+      if (fxaaPass && typeof fxaaPass.setSize === 'function' && !composer) {
+        fxaaPass.setSize(w * pr, h * pr);
       }
       if (bloomPass) bloomPass.enabled = tier < 2;
       if (shadowLight && shadowLight.shadow && shadowLight.shadow.mapSize.x !== SHADOW_STEPS[tier]) {
@@ -377,14 +394,6 @@ float fbm(vec3 p) {
     };
   }
 
-  // ── Write textContent only when the value actually changed ──
-  function setText(el, text) {
-    if (el.__spaceText !== text) {
-      el.__spaceText = text;
-      el.textContent = text;
-    }
-  }
-
   // ── Keyboard camera control (arrows rotate, +/− zoom) ──
   // Works with any cam exposing azimuthTarget / elevationTarget /
   // distanceTarget. Ignored while a form field has focus so native
@@ -416,8 +425,6 @@ float fbm(vec3 p) {
   }
 
   // ── Project a 3D object to a screen-space label element ──
-  // Lazily created so pages without THREE (e.g. sky-tonight, missions) can still
-  // use buildNav — common.js must not touch THREE at load time.
   let _v;
   function projectToScreen(obj, el, camera, offsetY, visible) {
     if (!_v) _v = new THREE.Vector3();
@@ -497,7 +504,7 @@ float fbm(vec3 p) {
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     }
-    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.1;
     if (opts.canvasLabel) {
@@ -510,33 +517,24 @@ float fbm(vec3 p) {
     container.appendChild(renderer.domElement);
 
     let composer = null, bloomPass = null, fxaaPass = null;
-    function setFxaaResolution() {
-      if (!fxaaPass) return;
-      const pr = renderer.getPixelRatio();
-      fxaaPass.material.uniforms.resolution.value.set(
-        1 / (window.innerWidth * pr), 1 / (window.innerHeight * pr)
-      );
-    }
     if (opts.composer !== false) {
       try {
-        if (THREE.EffectComposer && THREE.UnrealBloomPass) {
-          composer = new THREE.EffectComposer(renderer);
-          composer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-          composer.setSize(window.innerWidth, window.innerHeight);
-          composer.addPass(new THREE.RenderPass(scene, camera));
-          const b = opts.bloom || {};
-          bloomPass = new THREE.UnrealBloomPass(
-            new THREE.Vector2(window.innerWidth, window.innerHeight),
-            b.strength != null ? b.strength : 0.6,
-            b.radius != null ? b.radius : 0.5,
-            b.threshold != null ? b.threshold : 0.8
-          );
-          composer.addPass(bloomPass);
-          composer.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
-          fxaaPass = new THREE.ShaderPass(THREE.FXAAShader);
-          composer.addPass(fxaaPass);
-          setFxaaResolution();
-        }
+        composer = new EffectComposer(renderer);
+        composer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        composer.setSize(window.innerWidth, window.innerHeight);
+        composer.addPass(new RenderPass(scene, camera));
+        const b = opts.bloom || {};
+        bloomPass = new UnrealBloomPass(
+          new THREE.Vector2(window.innerWidth, window.innerHeight),
+          b.strength != null ? b.strength : 0.6,
+          b.radius != null ? b.radius : 0.5,
+          b.threshold != null ? b.threshold : 0.8
+        );
+        composer.addPass(bloomPass);
+        // Tone mapping + color space conversion must precede FXAA (sRGB input).
+        composer.addPass(new OutputPass());
+        fxaaPass = new FXAAPass();
+        composer.addPass(fxaaPass);
       } catch (err) {
         console.warn('Post-processing unavailable, falling back to direct render.', err);
         composer = null;
@@ -556,7 +554,6 @@ float fbm(vec3 p) {
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
       if (composer) composer.setSize(window.innerWidth, window.innerHeight);
-      setFxaaResolution();
     }
     window.addEventListener('resize', opts.onResize
       ? function () { resize(); opts.onResize(); }
@@ -601,123 +598,8 @@ float fbm(vec3 p) {
     return hide;
   }
 
-  // ── Dismiss the gesture hint after the first real interaction ──
-  function initMobileHints() {
-    const hints = document.querySelectorAll('.hint');
-    if (!hints.length) return;
-    let done = false;
-    function dismiss() {
-      if (done) return;
-      done = true;
-      hints.forEach((h) => h.classList.add('is-dismissed'));
-      window.removeEventListener('pointerdown', dismiss, true);
-      window.removeEventListener('keydown', dismiss, true);
-      window.removeEventListener('wheel', dismiss, true);
-    }
-    window.addEventListener('pointerdown', dismiss, true);
-    window.addEventListener('keydown', dismiss, true);
-    window.addEventListener('wheel', dismiss, true);
-    // Auto-fade after a few seconds so it never permanently covers the scene.
-    window.setTimeout(dismiss, 8000);
-  }
-
-  // Body catalog lives in data.js (SPACE_DATA). This module stays
-  // render primitives + shared chrome only.
-
-  // ── Shared scene switcher used by every page ──
-  const SCENES = [
-    { key: 'light',    href: 'index.html',        label: 'Light Study' },
-    { key: 'tour',     href: 'solar-system.html', label: 'Grand Tour' },
-    { key: 'seasons',  href: 'seasons.html',      label: 'Seasons' },
-    { key: 'scale',    href: 'scale-walk.html',   label: 'Scale Walk' },
-    { key: 'sky',      href: 'sky-tonight.html',  label: 'Sky Tonight' },
-    { key: 'missions', href: 'missions.html',     label: 'Missions' }
-  ];
-  function buildNav(currentKey) {
-    const nav = document.createElement('nav');
-    nav.className = 'scene-nav';
-    nav.setAttribute('aria-label', 'Explore scenes');
-    const btn = document.createElement('button');
-    btn.className = 'scene-nav-btn';
-    btn.type = 'button';
-    btn.textContent = '✦ Explore';
-    btn.setAttribute('aria-expanded', 'false');
-    btn.setAttribute('aria-haspopup', 'true');
-    const menu = document.createElement('div');
-    menu.className = 'scene-menu';
-    menu.id = 'scene-menu';
-    menu.hidden = true;
-    btn.setAttribute('aria-controls', menu.id);
-    SCENES.forEach(s => {
-      const a = document.createElement('a');
-      a.href = s.href;
-      a.className = s.key === currentKey ? 'current' : '';
-      if (s.key === currentKey) a.setAttribute('aria-current', 'page');
-      a.innerHTML = '<span class="dot"></span>' + s.label;
-      menu.appendChild(a);
-    });
-    nav.appendChild(btn);
-    nav.appendChild(menu);
-    function setOpen(open) {
-      nav.classList.toggle('open', open);
-      btn.setAttribute('aria-expanded', String(open));
-      menu.hidden = !open;
-    }
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      setOpen(!nav.classList.contains('open'));
-    });
-    nav.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        setOpen(false);
-        btn.focus();
-      }
-    });
-    document.addEventListener('click', () => setOpen(false));
-    document.body.appendChild(nav);
-  }
-
-  // ── Compact educational panels on mobile ──
-  function initMobileInfoPanels() {
-    document.querySelectorAll('.info-panel').forEach((panel, index) => {
-      if (panel.classList.contains('mobile-info-panel')) return;
-
-      panel.classList.add('mobile-info-panel');
-      panel.classList.remove('is-expanded');
-
-      if (!panel.id) panel.id = 'info-panel-' + (index + 1);
-
-      const toggle = document.createElement('button');
-      toggle.type = 'button';
-      toggle.className = 'mobile-info-toggle';
-      toggle.textContent = 'Read';
-      toggle.setAttribute('aria-controls', panel.id);
-      toggle.setAttribute('aria-expanded', 'false');
-      toggle.setAttribute('aria-label', 'Read the full explanation');
-
-      toggle.addEventListener('click', () => {
-        const expanded = panel.classList.toggle('is-expanded');
-        toggle.textContent = expanded ? 'Close' : 'Read';
-        toggle.setAttribute('aria-expanded', String(expanded));
-        toggle.setAttribute(
-          'aria-label',
-          expanded ? 'Close the full explanation' : 'Read the full explanation'
-        );
-      });
-
-      panel.appendChild(toggle);
-    });
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      initMobileInfoPanels();
-      initMobileHints();
-    }, { once: true });
-  } else {
-    initMobileInfoPanels();
-    initMobileHints();
-  }
+  // Body catalog lives in data.js (SPACE_DATA). Navigation and
+  // mobile chrome live in chrome.js (imported above).
 
   return {
     bindCameraKeys,
@@ -742,3 +624,8 @@ float fbm(vec3 p) {
     wirePlayPause
   };
 })();
+
+window.SPACE = SPACE;
+window.THREE = THREE;
+
+export { SPACE, THREE };

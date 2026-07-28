@@ -2,10 +2,11 @@
    Grand Tour procedural planet / ring textures.
    Isolated from solar-system.html so the page script stays
    scene orchestration, not canvas paint routines.
-   Requires global THREE and SPACE.
    ───────────────────────────────────────────────────────── */
-'use strict';
-window.createTourTextures = function (renderer) {
+import * as THREE from 'three';
+import { SPACE } from './common.js';
+
+export function createTourTextures(renderer) {
   const clamp = SPACE.clamp;
   const seededRandom = SPACE.seededRandom;
 
@@ -30,7 +31,7 @@ window.createTourTextures = function (renderer) {
 
   function finishTexture(canvas) {
     const tex = new THREE.CanvasTexture(canvas);
-    tex.encoding = THREE.sRGBEncoding;
+    tex.colorSpace = THREE.SRGBColorSpace;
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.ClampToEdgeWrapping;
     tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
@@ -140,7 +141,7 @@ window.createTourTextures = function (renderer) {
     const H = 512;
     if (p.type === 'earth') {
       const tex = textureLoader.load('assets/earth/day.jpg');
-      tex.encoding = THREE.sRGBEncoding;
+      tex.colorSpace = THREE.SRGBColorSpace;
       tex.wrapS = THREE.RepeatWrapping;
       tex.wrapT = THREE.ClampToEdgeWrapping;
       tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
@@ -170,9 +171,11 @@ window.createTourTextures = function (renderer) {
       ctx.fillRect(x, 0, 1, H);
     }
     const tex = new THREE.CanvasTexture(c);
-    tex.encoding = THREE.sRGBEncoding;
+    tex.colorSpace = THREE.SRGBColorSpace;
     return tex;
   }
 
   return { loadingManager, makeRingTexture, planetTexture };
-};
+}
+
+window.createTourTextures = createTourTextures;

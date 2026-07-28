@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=20260728-14">
+<link rel="stylesheet" href="common.css?v=20260728-15">
 <style>
   /* this page scrolls, unlike the fixed 3D scenes */
   html, body { overflow-x: hidden; overflow-y: auto; }
@@ -101,9 +101,8 @@
   <div class="foot">Every mission here is real · Ask a grown-up to help you look up their latest pictures</div>
 </main>
 
-<script src="common.js?v=20260728-14"></script>
-<script>
-'use strict';
+<script type="module">
+import { SPACE } from './chrome.js';
 const MISSIONS = [
   { icon:'🛰️', name:'Voyager 1 & 2', tag:'The farthest travellers', year:'1977', color:'#6ab0ff',
     blurb:'Two probes that flew past the giant planets and kept going. They are now beyond every planet, drifting in the space between the stars. Each carries a golden record of sounds and pictures from Earth.',

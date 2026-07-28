@@ -11,8 +11,8 @@ An accessible, responsive collection of interactive solar-system experiences:
 
 ## Run locally
 
-Open `index.html` in a modern browser, or serve the directory with any static
-web server:
+Serve the directory with any static web server (ES modules will not load
+from `file://`):
 
 ```sh
 python3 -m http.server 8000
@@ -20,8 +20,10 @@ python3 -m http.server 8000
 
 Then visit <http://localhost:8000>.
 
-Three.js (r128, UMD build) is vendored under `vendor/three/`, so the 3D scenes
-work fully offline once the site is served.
+Three.js (r185, ES modules) is vendored under `vendor/three/`, so the 3D
+scenes work fully offline once the site is served. WebGL pages load it
+through an import map (`three` → `vendor/three/three.module.min.js`).
+Missions and Sky Tonight import only `chrome.js` and never load Three.js.
 
 ## Verify
 
@@ -40,7 +42,7 @@ bunx html-validate index.html solar-system.html seasons.html \
 
 ## Technology
 
-- Three.js 0.128.0
+- Three.js 0.185.1
 - WebGL and custom GLSL shaders
 - Vanilla HTML, CSS, and JavaScript
 - Earth day (surface), night-lights, normal, and specular maps from the

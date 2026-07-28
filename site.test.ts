@@ -35,11 +35,23 @@ describe.each(pages)("%s", (file) => {
     for (const src of srcs) {
       expect(src).not.toMatch(/^(?:https?:)?\/\//);
     }
+    for (const match of html.matchAll(/from\s+["']([^"']+)["']/g)) {
+      expect(match[1]).not.toMatch(/^(?:https?:)?\/\//);
+    }
   });
 
-  test("inline scripts parse", () => {
-    for (const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)) {
-      expect(() => new Function(match[1])).not.toThrow();
+  test('inline scripts parse', () => {
+    for (const match of html.matchAll(/<script(\s[^>]*)?>([\s\S]*?)<\/script>/gi)) {
+      const attrs = match[1] || '';
+      // import maps are JSON, not JS; skip them.
+      if (/\btype=["']importmap["']/i.test(attrs)) continue;
+      let source = match[2];
+      // Module scripts may use import declarations — strip those so the
+      // remaining classic body still parses under new Function.
+      if (/\btype=["']module["']/i.test(attrs)) {
+        source = source.replace(/^\s*import\s[\s\S]*?;\s*/gm, '');
+      }
+      expect(() => new Function(source)).not.toThrow();
     }
   });
 
@@ -69,9 +81,9 @@ describe.each(pages)("%s", (file) => {
 });
 
 test("shared scene navigation points to every live page", () => {
-  const common = readFileSync("common.js", "utf8");
+  const chrome = readFileSync("chrome.js", "utf8");
   for (const page of pages.filter((file) => !file.includes(" (1)"))) {
-    expect(common, `navigation does not include ${page}`).toContain(`href: '${page}'`);
+    expect(chrome, `navigation does not include ${page}`).toContain(`href: '${page}'`);
   }
 });
 
@@ -79,22 +91,42 @@ test("the obsolete duplicate page is not shipped", () => {
   expect(existsSync("sun-earth-moon (1).html")).toBe(false);
 });
 
-test("shared assets use a consistent cache-busting version", () => {
+test('shared assets use a consistent cache-busting version', () => {
   const versions = new Set<string>();
   for (const page of pages) {
-    const html = readFileSync(page, "utf8");
-    for (const match of html.matchAll(/common\.(?:css|js)\?v=([^"'&]+)/g)) {
+    const html = readFileSync(page, 'utf8');
+    for (const match of html.matchAll(/common\.css\?v=([^"'&]+)/g)) {
       versions.add(match[1]);
     }
   }
   expect(versions.size).toBe(1);
 });
 
+test('Three.js is loaded as a local ES module', () => {
+  const commonJs = readFileSync('common.js', 'utf8');
+  expect(commonJs).toMatch(/from\s+['"]three['"]/);
+  expect(commonJs).toContain('three/addons/postprocessing/');
+  expect(existsSync('vendor/three/three.module.min.js')).toBe(true);
+  expect(existsSync('vendor/three/three.core.min.js')).toBe(true);
+  for (const page of ['index.html', 'solar-system.html', 'seasons.html', 'scale-walk.html']) {
+    const html = readFileSync(page, 'utf8');
+    expect(html).toContain('type="importmap"');
+    expect(html).toContain('three.module.min.js');
+    expect(html).not.toContain('three.min.js');
+  }
+  for (const page of ['missions.html', 'sky-tonight.html']) {
+    const html = readFileSync(page, 'utf8');
+    expect(html).toContain("./chrome.js");
+    expect(html).not.toContain('type="importmap"');
+    expect(html).not.toContain('common.js');
+  }
+});
+
 test("interactive info panels use the shared mobile drawer", () => {
-  const commonJs = readFileSync("common.js", "utf8");
+  const chromeJs = readFileSync("chrome.js", "utf8");
   const commonCss = readFileSync("common.css", "utf8");
-  expect(commonJs).toContain("initMobileInfoPanels");
-  expect(commonJs).toContain("aria-expanded");
+  expect(chromeJs).toContain("initMobileInfoPanels");
+  expect(chromeJs).toContain("aria-expanded");
   expect(commonCss).toContain(".info-panel.mobile-info-panel:not(.is-expanded)");
 });
 
