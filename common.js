@@ -425,6 +425,57 @@ float fbm(vec3 p) {
     el.style.opacity = 1;
   }
 
+  // ── WebGL renderer with a visible failure path ──
+  function failWebGL(err) {
+    const loader = document.getElementById('loader');
+    if (loader) {
+      loader.classList.remove('hidden');
+      const text = loader.querySelector('.loader-text');
+      if (text) {
+        text.textContent =
+          'This device cannot run the 3D view. Try another browser, or turn on hardware acceleration.';
+        text.style.animation = 'none';
+      }
+      loader.setAttribute('role', 'alert');
+    }
+    if (err) console.error(err);
+  }
+
+  function createRenderer(opts) {
+    let renderer = null;
+    try {
+      renderer = new THREE.WebGLRenderer(opts || {});
+    } catch (err) {
+      failWebGL(err);
+      return null;
+    }
+    if (!renderer.getContext()) {
+      failWebGL(new Error('WebGL context unavailable'));
+      return null;
+    }
+    return renderer;
+  }
+
+  // ── Dismiss the gesture hint after the first real interaction ──
+  function initMobileHints() {
+    const hints = document.querySelectorAll('.hint');
+    if (!hints.length) return;
+    let done = false;
+    function dismiss() {
+      if (done) return;
+      done = true;
+      hints.forEach((h) => h.classList.add('is-dismissed'));
+      window.removeEventListener('pointerdown', dismiss, true);
+      window.removeEventListener('keydown', dismiss, true);
+      window.removeEventListener('wheel', dismiss, true);
+    }
+    window.addEventListener('pointerdown', dismiss, true);
+    window.addEventListener('keydown', dismiss, true);
+    window.addEventListener('wheel', dismiss, true);
+    // Auto-fade after a few seconds so it never permanently covers the scene.
+    window.setTimeout(dismiss, 8000);
+  }
+
   // ── Shared scene switcher used by every page ──
   const SCENES = [
     { key: 'light',    href: 'index.html',        label: 'Light Study' },
@@ -511,9 +562,13 @@ float fbm(vec3 p) {
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initMobileInfoPanels, { once: true });
+    document.addEventListener('DOMContentLoaded', () => {
+      initMobileInfoPanels();
+      initMobileHints();
+    }, { once: true });
   } else {
     initMobileInfoPanels();
+    initMobileHints();
   }
 
   return {
@@ -522,10 +577,13 @@ float fbm(vec3 p) {
     clamp,
     createOrbitControls,
     createQualityGovernor,
+    createRenderer,
     createStarfield,
     createSun,
+    failWebGL,
     GLSL_NOISE,
     glowShell,
+    initMobileHints,
     initMobileInfoPanels,
     prefersReducedMotion,
     projectToScreen,
