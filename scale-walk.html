@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=20260728-2">
+<link rel="stylesheet" href="common.css?v=20260728-3">
 <style>
   .info-panel { top: 104px; width: 350px; }
   .info-title { font-size: 26px; line-height: 1.1; }
@@ -120,7 +120,8 @@
 <script src="vendor/three/RenderPass.js"></script>
 <script src="vendor/three/ShaderPass.js"></script>
 <script src="vendor/three/UnrealBloomPass.js"></script>
-<script src="common.js?v=20260728-2"></script>
+<script src="vendor/three/FXAAShader.js"></script>
+<script src="common.js?v=20260728-3"></script>
 <script>
 'use strict';
 const clamp = SPACE.clamp;
@@ -129,7 +130,9 @@ const container = document.getElementById('canvas-container');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x050810);
 const camera = new THREE.PerspectiveCamera(50, innerWidth/innerHeight, 0.05, 6000);
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+// FXAA in the composer chain handles AA; MSAA on the default framebuffer is
+// wasted because the scene renders into offscreen targets.
+const renderer = new THREE.WebGLRenderer({ antialias: false });
 renderer.domElement.setAttribute('aria-hidden', 'true');
 renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -189,23 +192,41 @@ PLANETS.forEach(p => {
   p.label.classList.add('label-pin');
 });
 
-let composer=null;
+let composer=null, fxaaPass=null, bloomPass=null;
+function setFxaaResolution(){
+  if (!fxaaPass) return;
+  const pr = renderer.getPixelRatio();
+  fxaaPass.material.uniforms.resolution.value.set(1/(innerWidth*pr), 1/(innerHeight*pr));
+}
 try {
   composer = new THREE.EffectComposer(renderer);
   composer.setPixelRatio(Math.min(devicePixelRatio,2)); composer.setSize(innerWidth,innerHeight);
   composer.addPass(new THREE.RenderPass(scene,camera));
-  composer.addPass(new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),0.7,0.5,0.78));
+  bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),0.7,0.5,0.78);
+  composer.addPass(bloomPass);
   composer.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
+  fxaaPass = new THREE.ShaderPass(THREE.FXAAShader);
+  composer.addPass(fxaaPass);
+  setFxaaResolution();
 } catch(e){ composer=null; }
 
 const cam = SPACE.createOrbitControls(camera, renderer.domElement, {
   azimuth: 0.9, elevation: 0.35, distance: 12, minDistance: 2, maxDistance: 1600,
   zoomDistanceScale: 0.06, damping: 0.09, distanceDamping: 0.05
 });
+
+// Adapt render cost to what the device can actually hold.
+const quality = SPACE.createQualityGovernor({
+  bloomPass,
+  composer,
+  fxaaPass,
+  renderer
+});
+
 addEventListener('resize', () => {
   camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
   renderer.setSize(innerWidth,innerHeight);
-  if (composer) composer.setSize(innerWidth,innerHeight);
+  if (composer) { composer.setSize(innerWidth,innerHeight); setFxaaResolution(); }
 });
 
 // ── stops (Sun + 8 planets) ──
@@ -270,7 +291,8 @@ function render(){
     sAnalogy.innerHTML = `<span class="fact-tag">✦ Basketball Sun</span>` + analogyFor(p);
   }
 }
-function targetPos(){ const s=STOPS[idx]; return s.sun ? new THREE.Vector3(0,0,0) : s.p.mesh.position; }
+const _walkTarget = new THREE.Vector3();
+function targetPos(){ const s=STOPS[idx]; return s.sun ? _walkTarget.set(0,0,0) : _walkTarget.copy(s.p.mesh.position); }
 function targetDist(){ const s=STOPS[idx]; return s.sun ? 11 : clamp(s.p.dispR*9, 3, 26); }
 function goTo(i){ idx=clamp(i,0,STOPS.length-1); cam.distanceTarget=targetDist(); render(); }
 prevBtn.onclick=()=>goTo(idx-1); nextBtn.onclick=()=>goTo(idx+1);
@@ -282,11 +304,15 @@ function place(obj, el){ obj.getWorldPosition(_v); _v.project(camera);
     el.style.opacity=0; el.style.display='none'; return;
   }
   el.style.display='';
-  el.style.left=(_v.x*0.5+0.5)*innerWidth+'px'; el.style.top=(_v.y*-0.5+0.5)*innerHeight-26+'px'; el.style.opacity=0.85; }
+  el.style.transform='translate(-50%, -50%) translate('+((_v.x*0.5+0.5)*innerWidth)+'px, '+((_v.y*-0.5+0.5)*innerHeight-26)+'px)';
+  el.style.opacity=0.85; }
 
+let lastT=performance.now();
 function animate(){
   requestAnimationFrame(animate);
   const now=performance.now();
+  const rawDt=(now-lastT)/1000; lastT=now;
+  quality.frame(rawDt);
   const motionNow=SPACE.prefersReducedMotion ? 0 : now;
   cam.target.lerp(targetPos(), 0.06);
   cam.update();

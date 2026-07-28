@@ -175,7 +175,7 @@ canvas { display: block; }
 
 /* ──── 3D labels ──── */
 .label-3d {
-  position: absolute; font-family: 'Fragment Mono', monospace;
+  position: absolute; left: 0; top: 0; font-family: 'Fragment Mono', monospace;
   font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
   color: var(--ink); pointer-events: none; transform: translate(-50%, -50%);
   padding: 3px 7px; background: rgba(0,0,0,0.4); border: 1px solid var(--line);

@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=20260728-2">
+<link rel="stylesheet" href="common.css?v=20260728-3">
 <style>
   .info-panel { top: 104px; width: 340px; }
   .info-title { font-size: 26px; line-height: 1.1; }
@@ -139,7 +139,8 @@
 <script src="vendor/three/RenderPass.js"></script>
 <script src="vendor/three/ShaderPass.js"></script>
 <script src="vendor/three/UnrealBloomPass.js"></script>
-<script src="common.js?v=20260728-2"></script>
+<script src="vendor/three/FXAAShader.js"></script>
+<script src="common.js?v=20260728-3"></script>
 <script>
 'use strict';
 const clamp = SPACE.clamp;
@@ -149,7 +150,9 @@ const container = document.getElementById('canvas-container');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x050810);
 const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 3000);
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+// FXAA in the composer chain handles AA; MSAA on the default framebuffer is
+// wasted because the scene renders into offscreen targets.
+const renderer = new THREE.WebGLRenderer({ antialias: false });
 renderer.domElement.setAttribute('tabindex', '0');
 renderer.domElement.setAttribute('role', 'img');
 renderer.domElement.setAttribute('aria-label', '3D model of Earth orbiting the Sun through the seasons. Focus it and use the arrow keys to rotate, plus and minus to zoom.');
@@ -203,13 +206,20 @@ const equator = new THREE.Line(new THREE.BufferGeometry().setFromPoints(eqPts),
   new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.25 }));
 earthPivot.add(equator);
 
-// sunlight rays — parallel arrows striking Earth, brighter where light is direct
+// sunlight rays — parallel arrows striking Earth, brighter where light is direct.
+// Vertex buffers are pooled and rewritten in place each frame (no per-frame
+// vector/attribute churn).
 const rayGroup = new THREE.Group();
 scene.add(rayGroup);
 const rayMat = new THREE.LineBasicMaterial({ color: 0xffd98a, transparent: true, opacity: 0.5 });
+const rayGeoms = [];
 for (let i=0;i<7;i++){
-  const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]);
-  rayGroup.add(new THREE.Line(g, rayMat));
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
+  const line = new THREE.Line(g, rayMat);
+  line.frustumCulled = false;
+  rayGroup.add(line);
+  rayGeoms.push(g);
 }
 
 // season markers around the orbit
@@ -231,14 +241,23 @@ MARKERS.forEach(m => {
   el.style.color = m.dot; labelLayer.appendChild(el); m.label = el;
 });
 
-// bloom
-let composer=null;
+// bloom + FXAA
+let composer=null, fxaaPass=null, bloomPass=null;
+function setFxaaResolution(){
+  if (!fxaaPass) return;
+  const pr = renderer.getPixelRatio();
+  fxaaPass.material.uniforms.resolution.value.set(1/(innerWidth*pr), 1/(innerHeight*pr));
+}
 try {
   composer = new THREE.EffectComposer(renderer);
   composer.setPixelRatio(Math.min(devicePixelRatio,2)); composer.setSize(innerWidth,innerHeight);
   composer.addPass(new THREE.RenderPass(scene,camera));
-  composer.addPass(new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),0.7,0.5,0.75));
+  bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),0.7,0.5,0.75);
+  composer.addPass(bloomPass);
   composer.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
+  fxaaPass = new THREE.ShaderPass(THREE.FXAAShader);
+  composer.addPass(fxaaPass);
+  setFxaaResolution();
 } catch(e){ composer=null; }
 
 const cameraFitDistance = () => clamp(28 / Math.min(camera.aspect, 1), 28, 58);
@@ -247,13 +266,22 @@ const cam = SPACE.createOrbitControls(camera, renderer.domElement, {
   azimuth: 0.6, elevation: 0.7, distance: fittedCameraDistance, minDistance: 6, maxDistance: 60, damping: 0.1
 });
 SPACE.bindCameraKeys(cam, { maxDistance: 60, minDistance: 6 });
+
+// Adapt render cost to what the device can actually hold.
+const quality = SPACE.createQualityGovernor({
+  bloomPass,
+  composer,
+  fxaaPass,
+  renderer
+});
+
 addEventListener('resize', () => {
   const wasFitted = Math.abs(cam.distanceTarget - fittedCameraDistance) < 0.01;
   camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
   fittedCameraDistance = cameraFitDistance();
   if (wasFitted) cam.distance = cam.distanceTarget = fittedCameraDistance;
   renderer.setSize(innerWidth,innerHeight);
-  if (composer) composer.setSize(innerWidth,innerHeight);
+  if (composer) { composer.setSize(innerWidth,innerHeight); setFxaaResolution(); }
 });
 
 // ── state / UI ──
@@ -315,10 +343,12 @@ const BODY = {
 };
 
 const _p=new THREE.Vector3(), _sunDir=new THREE.Vector3(), _v=new THREE.Vector3();
+const _perp=new THREE.Vector3(), _off=new THREE.Vector3(), _s=new THREE.Vector3(), _e=new THREE.Vector3(), _start=new THREE.Vector3();
 let last=performance.now();
 function animate(){
   requestAnimationFrame(animate);
-  const now=performance.now(); const dt=Math.min((now-last)/1000,0.05); last=now;
+  const now=performance.now(); const rawDt=(now-last)/1000; const dt=Math.min(rawDt,0.05); last=now;
+  quality.frame(rawDt);
   if (state.playing){
     state.theta=(state.theta+dt*22)%360;
     state.motionTime+=dt;
@@ -333,14 +363,17 @@ function animate(){
 
   // sunlight rays from Sun toward Earth's lit side
   _sunDir.copy(earthPivot.position).multiplyScalar(-1).normalize();
-  const start = earthPivot.position.clone().addScaledVector(_sunDir, 3.2);
-  rayGroup.children.forEach((line,i)=>{
-    const off=(i-3)*0.42;
-    const perp=new THREE.Vector3(-_sunDir.z,0,_sunDir.x).multiplyScalar(off);
-    const up=new THREE.Vector3(0,1,0).multiplyScalar(((i%3)-1)*0.4);
-    const s=start.clone().add(perp).add(up);
-    const e=earthPivot.position.clone().add(perp).add(up).addScaledVector(_sunDir,EARTH_R);
-    line.geometry.setFromPoints([s,e]);
+  _perp.set(-_sunDir.z, 0, _sunDir.x);
+  _start.copy(earthPivot.position).addScaledVector(_sunDir, 3.2);
+  rayGeoms.forEach((g,i)=>{
+    _off.copy(_perp).multiplyScalar((i-3)*0.42);
+    _off.y = ((i%3)-1)*0.4;
+    _s.copy(_start).add(_off);
+    _e.copy(earthPivot.position).add(_off).addScaledVector(_sunDir, EARTH_R);
+    const pos = g.attributes.position;
+    pos.setXYZ(0, _s.x, _s.y, _s.z);
+    pos.setXYZ(1, _e.x, _e.y, _e.z);
+    pos.needsUpdate = true;
   });
 
   // sub-solar latitude = arcsin(sin23.4 * sinθ)
@@ -359,25 +392,31 @@ function animate(){
       m.label.style.opacity=0; m.label.style.display='none'; return;
     }
     m.label.style.display='';
-    m.label.style.left=(_v.x*0.5+0.5)*innerWidth+'px';
-    m.label.style.top=(_v.y*-0.5+0.5)*innerHeight-22+'px';
+    m.label.style.transform='translate(-50%, -50%) translate('+((_v.x*0.5+0.5)*innerWidth)+'px, '+((_v.y*-0.5+0.5)*innerHeight-22)+'px)';
     m.label.style.opacity=0.85;
   });
 
-  // info
+  // info — DOM writes only fire when the value actually changes
   const n=seasonName(state.theta);
-  sTitle.textContent = 'Northern '+n;
-  sBody.textContent = BODY[n];
-  northSeason.textContent = n;
-  southSeason.textContent = OPPOSITE[n];
-  metaMonth.textContent = monthAt(state.theta);
-  slider.setAttribute('aria-valuetext', metaMonth.textContent);
-  metaSub.textContent = Math.abs(subLat)<1 ? 'Equator (0°)'
-    : (subLat>0?'+':'−') + Math.abs(subLat).toFixed(0) + '° (' + (subLat>0?'north':'south') + ')';
+  const monthName = monthAt(state.theta);
+  SPACE.setText(sTitle, 'Northern '+n);
+  SPACE.setText(sBody, BODY[n]);
+  SPACE.setText(northSeason, n);
+  SPACE.setText(southSeason, OPPOSITE[n]);
+  SPACE.setText(metaMonth, monthName);
+  if (slider.__spaceMonth !== monthName) {
+    slider.__spaceMonth = monthName;
+    slider.setAttribute('aria-valuetext', monthName);
+  }
+  SPACE.setText(metaSub, Math.abs(subLat)<1 ? 'Equator (0°)'
+    : (subLat>0?'+':'−') + Math.abs(subLat).toFixed(0) + '° (' + (subLat>0?'north':'south') + ')');
   MARKERS.forEach(m=>{
     const active=Math.abs(((state.theta-m.deg+540)%360)-180)<8;
-    m.btn.classList.toggle('active',active);
-    m.btn.setAttribute('aria-pressed',String(active));
+    if (m.__wasActive !== active) {
+      m.__wasActive = active;
+      m.btn.classList.toggle('active',active);
+      m.btn.setAttribute('aria-pressed',String(active));
+    }
   });
 
   if (composer) composer.render(); else renderer.render(scene,camera);
