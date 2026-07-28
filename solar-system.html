@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>The Sun &amp; Its Planets — A Grand Tour</title>
 <meta name="description" content="Take a grand tour of all eight planets in an interactive 3D solar system — real orbits, moons, comets, and kid-friendly facts. Free, ad-free astronomy for curious kids.">
 <meta name="theme-color" content="#050810">
@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=20260728-1">
+<link rel="stylesheet" href="common.css?v=20260728-2">
 <style>
   /* ── Page-specific styling for the grand tour ── */
   .info-panel { top: 132px; width: 330px; }
@@ -232,19 +232,19 @@
 </div>
 
 <div class="hint">
-  <span class="key">Drag</span> to rotate · <span class="key">Scroll</span> to zoom · <span class="key">Tap</span> a world
+  <span class="key">Drag</span> or <span class="key">Arrows</span> to rotate · <span class="key">Scroll</span> or <span class="key">+ −</span> to zoom · <span class="key">Tap</span> a world
 </div>
 
-<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/shaders/GammaCorrectionShader.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/shaders/FXAAShader.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
-<script src="common.js?v=20260728-1"></script>
+<script src="vendor/three/three.min.js"></script>
+<script src="vendor/three/CopyShader.js"></script>
+<script src="vendor/three/LuminosityHighPassShader.js"></script>
+<script src="vendor/three/GammaCorrectionShader.js"></script>
+<script src="vendor/three/FXAAShader.js"></script>
+<script src="vendor/three/EffectComposer.js"></script>
+<script src="vendor/three/RenderPass.js"></script>
+<script src="vendor/three/ShaderPass.js"></script>
+<script src="vendor/three/UnrealBloomPass.js"></script>
+<script src="common.js?v=20260728-2"></script>
 <script>
 'use strict';
 const clamp = SPACE.clamp;
@@ -259,7 +259,9 @@ scene.background = new THREE.Color(0x050810);
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.05, 4000);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-renderer.domElement.setAttribute('aria-hidden', 'true');
+renderer.domElement.setAttribute('tabindex', '0');
+renderer.domElement.setAttribute('role', 'img');
+renderer.domElement.setAttribute('aria-label', '3D model of the solar system. Focus it and use the arrow keys to rotate, plus and minus to zoom.');
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.outputEncoding = THREE.sRGBEncoding;
@@ -510,7 +512,8 @@ function makeVenusTexture(p, W, H) {
   ctx.globalAlpha = 1;
   return finishTexture(c);
 }
-const textureLoader = new THREE.TextureLoader();
+const loadingManager = new THREE.LoadingManager();
+const textureLoader = new THREE.TextureLoader(loadingManager);
 function planetTexture(p) {
   const W = 1024, H = 512;
   if (p.type === 'earth') {
@@ -740,6 +743,7 @@ const cam = SPACE.createOrbitControls(camera, renderer.domElement, {
   zoomDistanceScale: 0.05, damping: 0.10, distanceDamping: 0.08,
   onPick: handlePick
 });
+SPACE.bindCameraKeys(cam, { maxDistance: maxDistance, minDistance: 1.5 });
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -903,6 +907,7 @@ function selectBody(key) {
   sim.selected = key;
   sim.follow = !!key;
   setActiveButton(key);
+  if (quiz.active && key) quizPick(key);
   Object.entries(labels).forEach(([k, el]) => el.classList.toggle('selected', k === key));
 
   if (!key) {
@@ -940,9 +945,7 @@ function handlePick(clientX, clientY) {
   raycaster.setFromCamera(ndc, camera);
   const hits = raycaster.intersectObjects(selectable.map(s => s.mesh), false);
   if (hits.length && hits[0].object.userData.key) {
-    const key = hits[0].object.userData.key;
-    selectBody(key);
-    if (quiz.active) quizPick(key);
+    selectBody(hits[0].object.userData.key);
   }
 }
 
@@ -1012,14 +1015,19 @@ function animate() {
   if (composer) composer.render(); else renderer.render(scene, camera);
 }
 
-requestAnimationFrame(() => {
-  setTimeout(() => {
-    const loader = document.getElementById('loader');
-    loader.classList.add('hidden');
-    loader.setAttribute('aria-hidden', 'true');
-  }, 250);
-  animate();
-});
+// Hold the loader until Earth's texture lands; the safety timeout guarantees
+// a failed request can never trap anyone on the loader.
+let loaderHidden = false;
+function hideLoader() {
+  if (loaderHidden) return;
+  loaderHidden = true;
+  const loader = document.getElementById('loader');
+  loader.classList.add('hidden');
+  loader.setAttribute('aria-hidden', 'true');
+}
+loadingManager.onLoad = hideLoader;
+setTimeout(hideLoader, 5000);
+requestAnimationFrame(() => { animate(); });
 
 // ─────────────────────────────────────────────────────────
 // 17. GUIDED TOUR + QUIZ MODES
@@ -1094,7 +1102,7 @@ function nameOf(key) { const i = infoByKey(key); return i ? i.name : key; }
 function showQuizQuestion() {
   quiz.answered = false;
   const item = QUIZ[quiz.order[quiz.idx]];
-  stageText.innerHTML = `<b>Question ${quiz.idx + 1} of ${QUIZ.length}.</b> ${item.q} <br>Tap it on the screen!`;
+  stageText.innerHTML = `<b>Question ${quiz.idx + 1} of ${QUIZ.length}.</b> ${item.q} <br>Tap it on the screen — or pick it from the list!`;
 }
 function startQuiz() {
   stopModes();

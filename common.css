@@ -6,7 +6,7 @@
   --bg: #050810;
   --ink: #e8ecf4;
   --ink-dim: #8893a8;
-  --ink-faint: #707b91;
+  --ink-faint: #8a94a8;
   --accent: #f4c560;
   --accent-warm: #e89248;
   --accent-cool: #6ab0ff;
@@ -22,6 +22,12 @@ a:focus-visible,
 input:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
+}
+
+/* inset so the ring stays visible on the edge-to-edge scene canvas */
+canvas:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
 }
 
 html, body {

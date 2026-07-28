@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Why We Have Seasons</title>
 <meta name="description" content="See why Earth has seasons — it's the tilt, not the distance. An interactive model with solstices, equinoxes, and both hemispheres. Free, ad-free astronomy for kids.">
 <meta name="theme-color" content="#050810">
@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=20260728-1">
+<link rel="stylesheet" href="common.css?v=20260728-2">
 <style>
   .info-panel { top: 104px; width: 340px; }
   .info-title { font-size: 26px; line-height: 1.1; }
@@ -129,17 +129,17 @@
   </div>
 </div>
 
-<div class="hint"><span class="key">Drag</span> to rotate · <span class="key">Scroll</span> to zoom</div>
+<div class="hint"><span class="key">Drag</span> or <span class="key">Arrows</span> to rotate · <span class="key">Scroll</span> or <span class="key">+ −</span> to zoom</div>
 
-<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/shaders/GammaCorrectionShader.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
-<script src="common.js?v=20260728-1"></script>
+<script src="vendor/three/three.min.js"></script>
+<script src="vendor/three/CopyShader.js"></script>
+<script src="vendor/three/LuminosityHighPassShader.js"></script>
+<script src="vendor/three/GammaCorrectionShader.js"></script>
+<script src="vendor/three/EffectComposer.js"></script>
+<script src="vendor/three/RenderPass.js"></script>
+<script src="vendor/three/ShaderPass.js"></script>
+<script src="vendor/three/UnrealBloomPass.js"></script>
+<script src="common.js?v=20260728-2"></script>
 <script>
 'use strict';
 const clamp = SPACE.clamp;
@@ -150,7 +150,9 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x050810);
 const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 3000);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.domElement.setAttribute('aria-hidden', 'true');
+renderer.domElement.setAttribute('tabindex', '0');
+renderer.domElement.setAttribute('role', 'img');
+renderer.domElement.setAttribute('aria-label', '3D model of Earth orbiting the Sun through the seasons. Focus it and use the arrow keys to rotate, plus and minus to zoom.');
 renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.outputEncoding = THREE.sRGBEncoding;
@@ -182,7 +184,8 @@ const earthPivot = new THREE.Group(); // orients local +Y to the fixed north pol
 earthPivot.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), northPole);
 scene.add(earthPivot);
 
-const tex = new THREE.TextureLoader().load('assets/earth/day.jpg');
+const loadingManager = new THREE.LoadingManager();
+const tex = new THREE.TextureLoader(loadingManager).load('assets/earth/day.jpg');
 tex.encoding = THREE.sRGBEncoding;
 const earth = new THREE.Mesh(new THREE.SphereGeometry(EARTH_R, 96, 96),
   new THREE.MeshStandardMaterial({ map: tex, roughness: 1, metalness: 0 }));
@@ -243,6 +246,7 @@ let fittedCameraDistance = cameraFitDistance();
 const cam = SPACE.createOrbitControls(camera, renderer.domElement, {
   azimuth: 0.6, elevation: 0.7, distance: fittedCameraDistance, minDistance: 6, maxDistance: 60, damping: 0.1
 });
+SPACE.bindCameraKeys(cam, { maxDistance: 60, minDistance: 6 });
 addEventListener('resize', () => {
   const wasFitted = Math.abs(cam.distanceTarget - fittedCameraDistance) < 0.01;
   camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
@@ -378,7 +382,17 @@ function animate(){
 
   if (composer) composer.render(); else renderer.render(scene,camera);
 }
-requestAnimationFrame(()=>{ setTimeout(()=>{ const loader=document.getElementById('loader'); loader.classList.add('hidden'); loader.setAttribute('aria-hidden','true'); },250); animate(); });
+let loaderHidden = false;
+function hideLoader(){
+  if (loaderHidden) return;
+  loaderHidden = true;
+  const loader=document.getElementById('loader');
+  loader.classList.add('hidden');
+  loader.setAttribute('aria-hidden','true');
+}
+loadingManager.onLoad = hideLoader;
+setTimeout(hideLoader, 5000);
+requestAnimationFrame(()=>{ animate(); });
 SPACE.buildNav('seasons');
 </script>
 </body>
