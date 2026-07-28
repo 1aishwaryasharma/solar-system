@@ -122,6 +122,26 @@ test('Three.js is loaded as a local ES module', () => {
   }
 });
 
+test('Earth night shader uses the current Three.js map UV varying', () => {
+  const index = readFileSync('index.html', 'utf8');
+  expect(index).toContain('texture2D(nightMap, vMapUv)');
+  expect(index).not.toContain('texture2D(nightMap, vUv)');
+});
+
+test('WebGL scenes preserve their pre-upgrade lighting levels', () => {
+  const common = readFileSync('common.js', 'utf8');
+  const index = readFileSync('index.html', 'utf8');
+  const scaleWalk = readFileSync('scale-walk.html', 'utf8');
+  const seasons = readFileSync('seasons.html', 'utf8');
+  const solarSystem = readFileSync('solar-system.html', 'utf8');
+
+  expect(common).toContain('renderer.toneMappingExposure = 1.1');
+  expect(index).toContain('new THREE.DirectionalLight(0xffeacc, 2.2)');
+  expect(scaleWalk).toContain('new THREE.PointLight(0xfff2e0, 2.6, 0, 0)');
+  expect(seasons).toContain('new THREE.PointLight(0xfff2e0, 2.4, 0, 0)');
+  expect(solarSystem).toContain('new THREE.PointLight(0xfff2e0, 2.6, 0, 0)');
+});
+
 test("interactive info panels use the shared mobile drawer", () => {
   const chromeJs = readFileSync("chrome.js", "utf8");
   const commonCss = readFileSync("common.css", "utf8");

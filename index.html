@@ -210,7 +210,7 @@ sunGroup.position.set(-SUN_DISTANCE, 0, 0);
 scene.add(sunGroup);
 
 // directional light from the sun (parallel rays — realistic for distant star)
-const sunLight = new THREE.DirectionalLight(0xffeacc, 1.35);
+const sunLight = new THREE.DirectionalLight(0xffeacc, 2.2);
 sunLight.position.copy(sunGroup.position);
 sunLight.target.position.set(0, 0, 0);
 sunLight.castShadow = true;
@@ -367,7 +367,7 @@ earthMaterial.onBeforeCompile = (shader) => {
       '#include <emissivemap_fragment>',
       `#include <emissivemap_fragment>
       float dayMix = smoothstep(-0.08, 0.22, dot(normalize(vNormal), sunDirView));
-      vec3 cityLights = texture2D(nightMap, vUv).rgb;
+      vec3 cityLights = texture2D(nightMap, vMapUv).rgb;
       totalEmissiveRadiance += cityLights * (1.0 - dayMix) * 1.6;`
     );
 };

@@ -506,9 +506,9 @@ float fbm(vec3 p) {
     }
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    // Half-float bloom sees pre-tonemap luminance; keep exposure at 1.0 so
-    // lit albedo stays below the bloom floor instead of washing out.
-    renderer.toneMappingExposure = 1.0;
+    // Preserve the scenes' pre-upgrade exposure. HDR bloom is controlled by
+    // its luminance threshold rather than dimming the entire rendered image.
+    renderer.toneMappingExposure = 1.1;
     if (opts.canvasLabel) {
       renderer.domElement.setAttribute('tabindex', '0');
       renderer.domElement.setAttribute('role', 'img');
