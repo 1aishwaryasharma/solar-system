@@ -136,8 +136,11 @@ test('WebGL scenes preserve their pre-upgrade lighting levels', () => {
   const solarSystem = readFileSync('solar-system.html', 'utf8');
 
   expect(common).toContain('b.threshold != null ? b.threshold : 1.35 * Math.PI');
-  expect(common).toContain('col * 1.45 * 3.14159265');
+  expect(common).toContain('col * 1.45 * uOutputScale');
   expect(common).toContain('renderer.toneMappingExposure = 1.1');
+  for (const scene of [index, scaleWalk, seasons, solarSystem]) {
+    expect(scene).toContain('uOutputScale.value = setup.bloomPass && setup.bloomPass.enabled');
+  }
   expect(index).toContain('new THREE.DirectionalLight(0xffeacc, 2.2 * Math.PI)');
   expect(scaleWalk).toContain('new THREE.PointLight(0xfff2e0, 2.6 * Math.PI, 0, 0)');
   expect(seasons).toContain('new THREE.PointLight(0xfff2e0, 2.4 * Math.PI, 0, 0)');

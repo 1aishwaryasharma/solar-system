@@ -168,7 +168,10 @@ float fbm(vec3 p) {
   // ── The Sun: turbulent granulating core + two glow shells ──
   function createSun(radius) {
     const group = new THREE.Group();
-    const uniforms = { uTime: { value: 0 } };
+    const uniforms = {
+      uOutputScale: { value: 1 },
+      uTime: { value: 0 }
+    };
     const core = new THREE.Mesh(
       new THREE.SphereGeometry(radius, 64, 64),
       new THREE.ShaderMaterial({
@@ -180,7 +183,7 @@ float fbm(vec3 p) {
             gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
           }`,
         fragmentShader: GLSL_NOISE + `
-          varying vec3 vPos; varying vec3 vN; uniform float uTime;
+          varying vec3 vPos; varying vec3 vN; uniform float uOutputScale; uniform float uTime;
           void main() {
             vec3 p = normalize(vPos);
             float n1 = fbm(p * 3.5 + vec3(uTime * 0.04, uTime * 0.03, -uTime * 0.02));
@@ -195,7 +198,7 @@ float fbm(vec3 p) {
             col *= 0.5 + 0.7 * limb;
             // Keep this custom emissive shader in the same HDR range as the
             // r155-migrated direct lights so its hottest regions still bloom.
-            gl_FragColor = vec4(col * 1.45 * 3.14159265, 1.0);
+            gl_FragColor = vec4(col * 1.45 * uOutputScale, 1.0);
           }`
       })
     );

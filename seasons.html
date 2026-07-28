@@ -313,6 +313,7 @@ function animate(){
   // Keep a stable, Sun-centred reference frame so only Earth moves around the orbit.
   cam.update();
 
+  SUN.uniforms.uOutputScale.value = setup.bloomPass && setup.bloomPass.enabled ? Math.PI : 1;
   SUN.uniforms.uTime.value = motionTime;
   if (starU) starU.uTime.value = motionTime;
 

@@ -783,6 +783,7 @@ function animate() {
 
   // Animated shader clocks
   const t = SPACE.prefersReducedMotion ? 0 : sim.visualTime;
+  sunUniforms.uOutputScale.value = setup.bloomPass && setup.bloomPass.enabled ? Math.PI : 1;
   sunUniforms.uTime.value = t;
   starUniforms.uTime.value = t;
 

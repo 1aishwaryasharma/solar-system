@@ -343,6 +343,7 @@ function animate() {
   const motionNow = SPACE.prefersReducedMotion ? 0 : now;
   cam.target.lerp(targetPos(), 0.06);
   cam.update();
+  SUN.uniforms.uOutputScale.value = setup.bloomPass && setup.bloomPass.enabled ? Math.PI : 1;
   SUN.uniforms.uTime.value = motionNow * 0.001;
   starfield.uniforms.uTime.value = motionNow * 0.001;
   if (!SPACE.prefersReducedMotion) {

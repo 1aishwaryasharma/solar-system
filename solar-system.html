@@ -690,6 +690,7 @@ function animate() {
   cam.update();
 
   const t = SPACE.prefersReducedMotion ? 0 : sim.visualTime;
+  sunUniforms.uOutputScale.value = setup.bloomPass && setup.bloomPass.enabled ? Math.PI : 1;
   sunUniforms.uTime.value = t;
   starUniforms.uTime.value = t;
   SUN.corona.scale.setScalar(1 + Math.sin(t * 1.5) * 0.015);
