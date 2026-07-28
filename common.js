@@ -3,10 +3,18 @@
    scenes. Only the genuinely identical building blocks live here
    (noise, starfield, the Sun, orbit-camera controls, label
    projection); each scene keeps its own bespoke logic inline.
-   Requires the global THREE (loaded via the r128 UMD build).
+   Three.js r185 ES modules + postprocessing addons.
    ───────────────────────────────────────────────────────── */
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { FXAAPass } from 'three/addons/postprocessing/FXAAPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
 'use strict';
-window.SPACE = (function () {
+
+const SPACE = (function () {
 
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -341,8 +349,10 @@ float fbm(vec3 p) {
         composer.setPixelRatio(pr);
         composer.setSize(w, h);
       }
-      if (fxaaPass) {
-        fxaaPass.material.uniforms.resolution.value.set(1 / (w * pr), 1 / (h * pr));
+      // composer.setSize already resizes FXAAPass; keep a direct path for
+      // scenes that wire FXAA without a composer reference.
+      if (fxaaPass && typeof fxaaPass.setSize === 'function' && !composer) {
+        fxaaPass.setSize(w * pr, h * pr);
       }
       if (bloomPass) bloomPass.enabled = tier < 2;
       if (shadowLight && shadowLight.shadow && shadowLight.shadow.mapSize.x !== SHADOW_STEPS[tier]) {
@@ -497,7 +507,7 @@ float fbm(vec3 p) {
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     }
-    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.1;
     if (opts.canvasLabel) {
@@ -510,33 +520,24 @@ float fbm(vec3 p) {
     container.appendChild(renderer.domElement);
 
     let composer = null, bloomPass = null, fxaaPass = null;
-    function setFxaaResolution() {
-      if (!fxaaPass) return;
-      const pr = renderer.getPixelRatio();
-      fxaaPass.material.uniforms.resolution.value.set(
-        1 / (window.innerWidth * pr), 1 / (window.innerHeight * pr)
-      );
-    }
     if (opts.composer !== false) {
       try {
-        if (THREE.EffectComposer && THREE.UnrealBloomPass) {
-          composer = new THREE.EffectComposer(renderer);
-          composer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-          composer.setSize(window.innerWidth, window.innerHeight);
-          composer.addPass(new THREE.RenderPass(scene, camera));
-          const b = opts.bloom || {};
-          bloomPass = new THREE.UnrealBloomPass(
-            new THREE.Vector2(window.innerWidth, window.innerHeight),
-            b.strength != null ? b.strength : 0.6,
-            b.radius != null ? b.radius : 0.5,
-            b.threshold != null ? b.threshold : 0.8
-          );
-          composer.addPass(bloomPass);
-          composer.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
-          fxaaPass = new THREE.ShaderPass(THREE.FXAAShader);
-          composer.addPass(fxaaPass);
-          setFxaaResolution();
-        }
+        composer = new EffectComposer(renderer);
+        composer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        composer.setSize(window.innerWidth, window.innerHeight);
+        composer.addPass(new RenderPass(scene, camera));
+        const b = opts.bloom || {};
+        bloomPass = new UnrealBloomPass(
+          new THREE.Vector2(window.innerWidth, window.innerHeight),
+          b.strength != null ? b.strength : 0.6,
+          b.radius != null ? b.radius : 0.5,
+          b.threshold != null ? b.threshold : 0.8
+        );
+        composer.addPass(bloomPass);
+        // Tone mapping + color space conversion must precede FXAA (sRGB input).
+        composer.addPass(new OutputPass());
+        fxaaPass = new FXAAPass();
+        composer.addPass(fxaaPass);
       } catch (err) {
         console.warn('Post-processing unavailable, falling back to direct render.', err);
         composer = null;
@@ -556,7 +557,6 @@ float fbm(vec3 p) {
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
       if (composer) composer.setSize(window.innerWidth, window.innerHeight);
-      setFxaaResolution();
     }
     window.addEventListener('resize', opts.onResize
       ? function () { resize(); opts.onResize(); }
@@ -742,3 +742,8 @@ float fbm(vec3 p) {
     wirePlayPause
   };
 })();
+
+window.SPACE = SPACE;
+window.THREE = THREE;
+
+export { SPACE, THREE };

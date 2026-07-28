@@ -4,8 +4,7 @@
    here. common.js stays render-only; pages that need bodies
    load this file. Missions does not.
    ───────────────────────────────────────────────────────── */
-'use strict';
-window.SPACE_DATA = (function () {
+export const SPACE_DATA = (function () {
   const F = (size, day, year, moons, weight) => ({ day, moons, size, weight, year });
 
   const BODIES = {
@@ -320,3 +319,5 @@ window.SPACE_DATA = (function () {
     planets: () => copies(PLANET_ORDER)
   };
 })();
+
+window.SPACE_DATA = SPACE_DATA;

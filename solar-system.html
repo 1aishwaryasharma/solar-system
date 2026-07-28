@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=20260728-14">
+<link rel="stylesheet" href="common.css?v=20260728-15">
 <style>
   /* ── Page-specific styling for the grand tour; shared .facts / .fact-row /
      .fact-callout / .side-rail / .rail-btn live in common.css ── */
@@ -153,20 +153,19 @@
   <span class="key">Drag</span> or <span class="key">Arrows</span> to rotate · <span class="key">Scroll</span> or <span class="key">+ −</span> to zoom · <span class="key">Tap</span> a world
 </div>
 
-<script src="vendor/three/three.min.js"></script>
-<script src="vendor/three/CopyShader.js"></script>
-<script src="vendor/three/LuminosityHighPassShader.js"></script>
-<script src="vendor/three/GammaCorrectionShader.js"></script>
-<script src="vendor/three/FXAAShader.js"></script>
-<script src="vendor/three/EffectComposer.js"></script>
-<script src="vendor/three/RenderPass.js"></script>
-<script src="vendor/three/ShaderPass.js"></script>
-<script src="vendor/three/UnrealBloomPass.js"></script>
-<script src="common.js?v=20260728-14"></script>
-<script src="data.js?v=20260728-14"></script>
-<script src="tour-textures.js?v=20260728-14"></script>
-<script>
-'use strict';
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three/three.module.min.js",
+    "three/addons/": "./vendor/three/addons/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { SPACE } from './common.js';
+import { SPACE_DATA } from './data.js';
+import { createTourTextures } from './tour-textures.js';
 const clamp = SPACE.clamp;
 
 // ─────────────────────────────────────────────────────────
