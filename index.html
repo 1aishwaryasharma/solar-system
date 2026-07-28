@@ -1108,7 +1108,7 @@ function animate() {
   }
 
   // Earth rotates eastward: counter-clockwise when viewed above the north pole.
-  earth.rotation.y = -sim.time * sim.earthSpinSpeed;
+  earth.rotation.y = sim.time * sim.earthSpinSpeed;
 
   // The Sun's apparent annual path in this explicitly Earth-centered frame.
   sunGroup.position.set(
