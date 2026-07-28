@@ -599,8 +599,8 @@ WORLDS.forEach((w, i) => {
   });
 
   w.phase0 = i * 0.9;
-  // Prograde = negative Y in Three.js (eastward / CCW from above the north pole).
-  w.spinDir = w.retro ? 1 : -1;
+  // Prograde = positive Y in Three.js (eastward / CCW from above the north pole).
+  w.spinDir = w.retro ? -1 : 1;
   w.spinVisual = clamp(24 / w.rotationHours, 0.08, 2.4);
 });
 

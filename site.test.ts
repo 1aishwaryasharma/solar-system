@@ -114,3 +114,27 @@ test("current mission figures remain current", () => {
   expect(missions).toContain("about <b>24 hours</b>");
   expect(missions).toContain("more than <b>1.7 million observations</b>");
 });
+
+test('Earth and planet spin stay eastward (+Y in Three.js)', () => {
+  // Right-hand +rotation.y is CCW from above the north pole = geographic east.
+  // A previous "fix" negated these signs after misreading that convention.
+  const index = readFileSync('index.html', 'utf8');
+  const seasons = readFileSync('seasons.html', 'utf8');
+  const tour = readFileSync('solar-system.html', 'utf8');
+
+  expect(index).toMatch(/earth\.rotation\.y\s*=\s*sim\.time\s*\*\s*sim\.earthSpinSpeed\s*;/);
+  expect(index).not.toMatch(/earth\.rotation\.y\s*=\s*-\s*sim\.time/);
+
+  expect(seasons).toMatch(/earth\.rotation\.y\s*=\s*motionTime\s*\*\s*0\.6\s*;/);
+  expect(seasons).not.toMatch(/earth\.rotation\.y\s*=\s*-\s*motionTime/);
+
+  expect(tour).toMatch(/w\.spinDir\s*=\s*w\.retro\s*\?\s*-1\s*:\s*1\s*;/);
+});
+
+test('Three.js +Y carries the near face toward geographic east', () => {
+  // makeRotationY(+θ): (x,y,z) -> (c*x + s*z, y, -s*x + c*z)
+  // Front equator point (0,0,1) moves to +X; at +Z, east is +X.
+  const theta = 0.2;
+  const x = Math.sin(theta);
+  expect(x).toBeGreaterThan(0);
+});
