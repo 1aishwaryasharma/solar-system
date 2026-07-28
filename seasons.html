@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=20260728-7">
+<link rel="stylesheet" href="common.css?v=20260728-14">
 <style>
   .info-panel { top: 104px; width: 340px; }
   .info-title { font-size: 26px; line-height: 1.1; }
@@ -42,36 +42,8 @@
     text-transform: uppercase; color: var(--ink-faint); display: block; margin-bottom: 4px;
   }
   .hemi .h-season { color: var(--ink); font-size: 15px; }
-  .info-wow {
-    margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line);
-    font-size: 13px; line-height: 1.5; color: var(--ink-dim); font-weight: 300;
-  }
-  .info-wow .fact-tag {
-    display: block; font-family: 'Fragment Mono', monospace; font-size: 9px;
-    letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px;
-  }
-  .seasons-picker {
-    position: fixed; top: 50%; right: 24px; transform: translateY(-50%);
-    display: flex; flex-direction: column; gap: 6px; z-index: 10;
-  }
-  .season-btn {
-    background: var(--panel); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--line); border-radius: 2px; padding: 11px 16px; width: 210px;
-    color: var(--ink); font-family: 'Newsreader', serif; font-size: 13px; cursor: pointer;
-    text-align: left; transition: all 0.22s ease; display: flex; align-items: center; gap: 12px;
-  }
-  .season-btn:hover { background: var(--panel-bright); border-color: rgba(244,197,96,0.3); transform: translateX(-3px); }
-  .season-btn.active { border-color: var(--accent); background: rgba(244,197,96,0.08); }
-  .season-btn .s-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-  .season-btn em { font-style: italic; color: var(--accent-warm); }
   @media (max-width: 820px) {
     .info-title { font-size: 20px; }
-    .seasons-picker { top: 64px; right: 12px; transform: none; }
-    .season-btn { width: 150px; padding: 8px 10px; font-size: 11px; }
-  }
-  @media (max-height: 520px) and (orientation: landscape) {
-    .seasons-picker { top: 64px; right: 16px; transform: none; }
-    .season-btn { width: 180px; padding: 7px 10px; font-size: 11px; }
   }
 </style>
 </head>
@@ -104,14 +76,14 @@
     <div class="hemi"><span class="h-label">Northern half</span><span class="h-season" id="north-season">—</span></div>
     <div class="hemi"><span class="h-label">Southern half</span><span class="h-season" id="south-season">—</span></div>
   </div>
-  <div class="info-wow">
+  <div class="fact-callout">
     <span class="fact-tag">✦ The big idea</span>
     Seasons are <strong>not</strong> because Earth gets closer to the Sun. They happen because Earth is
     tilted, so each half leans toward the Sun for part of the year and away for the rest.
   </div>
 </aside>
 
-<div class="seasons-picker" id="picker" role="group" aria-label="Seasons"></div>
+<div class="side-rail" id="picker" role="group" aria-label="Seasons"></div>
 
 <div class="controls">
   <button type="button" class="play-btn" id="play-btn" aria-label="Pause simulation">
@@ -139,36 +111,32 @@
 <script src="vendor/three/ShaderPass.js"></script>
 <script src="vendor/three/UnrealBloomPass.js"></script>
 <script src="vendor/three/FXAAShader.js"></script>
-<script src="common.js?v=20260728-7"></script>
+<script src="common.js?v=20260728-14"></script>
+<script src="data.js?v=20260728-14"></script>
 <script>
 'use strict';
 const clamp = SPACE.clamp;
 const DEG = THREE.MathUtils.degToRad;
 
-const container = document.getElementById('canvas-container');
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x050810);
-const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 3000);
-// FXAA in the composer chain handles AA; MSAA on the default framebuffer is
-// wasted because the scene renders into offscreen targets.
-const renderer = SPACE.createRenderer({ antialias: false });
-if (!renderer) throw new Error('WebGL unavailable');
-renderer.domElement.setAttribute('tabindex', '0');
-renderer.domElement.setAttribute('role', 'img');
-renderer.domElement.setAttribute('aria-label', '3D model of Earth orbiting the Sun through the seasons. Focus it and use the arrow keys to rotate, plus and minus to zoom.');
-renderer.setSize(innerWidth, innerHeight);
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.outputEncoding = THREE.sRGBEncoding;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.1;
-container.appendChild(renderer.domElement);
+const setup = SPACE.createScene({
+  bloom: { strength: 0.7, radius: 0.5, threshold: 0.75 },
+  canvasLabel: '3D model of Earth orbiting the Sun through the seasons. Focus it and use the arrow keys to rotate, plus and minus to zoom.',
+  far: 3000,
+  onResize: refitCamera
+});
+if (!setup) throw new Error('WebGL unavailable');
+const scene = setup.scene;
+const camera = setup.camera;
+const renderer = setup.renderer;
+const composer = setup.composer;
+const quality = setup.quality;
 
 const starfield = SPACE.createStarfield({ count: 3500, innerR: 400, outerR: 900 });
 scene.add(starfield.points);
 const starU = starfield.uniforms;
 
 // Sun at centre
-const ORBIT_R = 9, EARTH_R = 0.85, TILT = DEG(23.4393);
+const ORBIT_R = 9, EARTH_R = 0.85, TILT = DEG(SPACE_DATA.BODIES.earth.tiltDeg);
 const SUN = SPACE.createSun(1.7);
 scene.add(SUN.group);
 const sunLight = new THREE.PointLight(0xfff2e0, 2.4, 0, 0);
@@ -241,48 +209,17 @@ MARKERS.forEach(m => {
   el.style.color = m.dot; labelLayer.appendChild(el); m.label = el;
 });
 
-// bloom + FXAA
-let composer=null, fxaaPass=null, bloomPass=null;
-function setFxaaResolution(){
-  if (!fxaaPass) return;
-  const pr = renderer.getPixelRatio();
-  fxaaPass.material.uniforms.resolution.value.set(1/(innerWidth*pr), 1/(innerHeight*pr));
-}
-try {
-  composer = new THREE.EffectComposer(renderer);
-  composer.setPixelRatio(Math.min(devicePixelRatio,2)); composer.setSize(innerWidth,innerHeight);
-  composer.addPass(new THREE.RenderPass(scene,camera));
-  bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),0.7,0.5,0.75);
-  composer.addPass(bloomPass);
-  composer.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
-  fxaaPass = new THREE.ShaderPass(THREE.FXAAShader);
-  composer.addPass(fxaaPass);
-  setFxaaResolution();
-} catch(e){ composer=null; }
-
 const cameraFitDistance = () => clamp(28 / Math.min(camera.aspect, 1), 28, 58);
 let fittedCameraDistance = cameraFitDistance();
+function refitCamera() {
+  const wasFitted = Math.abs(cam.distanceTarget - fittedCameraDistance) < 0.01;
+  fittedCameraDistance = cameraFitDistance();
+  if (wasFitted) cam.distance = cam.distanceTarget = fittedCameraDistance;
+}
 const cam = SPACE.createOrbitControls(camera, renderer.domElement, {
   azimuth: 0.6, elevation: 0.7, distance: fittedCameraDistance, minDistance: 6, maxDistance: 60, damping: 0.1
 });
 SPACE.bindCameraKeys(cam, { maxDistance: 60, minDistance: 6 });
-
-// Adapt render cost to what the device can actually hold.
-const quality = SPACE.createQualityGovernor({
-  bloomPass,
-  composer,
-  fxaaPass,
-  renderer
-});
-
-addEventListener('resize', () => {
-  const wasFitted = Math.abs(cam.distanceTarget - fittedCameraDistance) < 0.01;
-  camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
-  fittedCameraDistance = cameraFitDistance();
-  if (wasFitted) cam.distance = cam.distanceTarget = fittedCameraDistance;
-  renderer.setSize(innerWidth,innerHeight);
-  if (composer) { composer.setSize(innerWidth,innerHeight); setFxaaResolution(); }
-});
 
 // ── state / UI ──
 const state = {
@@ -294,12 +231,7 @@ const state = {
 };
 const playBtn=document.getElementById('play-btn'), playIcon=document.getElementById('play-icon');
 const slider=document.getElementById('year-slider');
-const PLAY='<path d="M2 1 L10 6 L2 11 Z"/>', PAUSE='<path d="M2 1 L4.5 1 L4.5 11 L2 11 Z M7.5 1 L10 1 L10 11 L7.5 11 Z"/>';
-function updatePlayButton(){
-  playIcon.innerHTML=state.playing?PAUSE:PLAY;
-  playBtn.setAttribute('aria-label', state.playing ? 'Pause simulation' : 'Play simulation');
-}
-playBtn.onclick=()=>{ state.playing=!state.playing; updatePlayButton(); };
+const updatePlayButton = SPACE.wirePlayPause(playBtn, playIcon, state);
 slider.oninput=()=>{ state.theta=parseFloat(slider.value); state.playing=false; updatePlayButton(); };
 document.getElementById('toggle-axis').onclick=function(){
   state.showAxis=!state.showAxis; axis.visible=equator.visible=state.showAxis;
@@ -315,9 +247,9 @@ updatePlayButton();
 
 const picker=document.getElementById('picker');
 MARKERS.forEach(m=>{
-  const b=document.createElement('button'); b.type='button'; b.className='season-btn';
+  const b=document.createElement('button'); b.type='button'; b.className='rail-btn';
   b.setAttribute('aria-pressed','false');
-  b.innerHTML=`<span class="s-dot" style="background:${m.dot}"></span><span>${m.name}</span>`;
+  b.innerHTML=`<span class="rail-dot" style="background:${m.dot};color:${m.dot}"></span><span>${m.name}</span>`;
   b.onclick=()=>{ state.theta=m.deg; slider.value=m.deg; state.playing=false; updatePlayButton(); };
   picker.appendChild(b); m.btn=b;
 });
@@ -388,13 +320,8 @@ function animate(){
 
   // labels
   MARKERS.forEach(m=>{
-    m.mesh.getWorldPosition(_v); _v.project(camera);
-    if (_v.z < -1 || _v.z > 1 || Math.abs(_v.x)>1.1 || Math.abs(_v.y)>1.1){
-      m.label.style.opacity=0; m.label.style.display='none'; return;
-    }
-    m.label.style.display='';
-    m.label.style.transform='translate(-50%, -50%) translate('+((_v.x*0.5+0.5)*innerWidth)+'px, '+((_v.y*-0.5+0.5)*innerHeight-22)+'px)';
-    m.label.style.opacity=0.85;
+    SPACE.projectToScreen(m.mesh, m.label, camera, -22, true);
+    if (m.label.style.display !== 'none') m.label.style.opacity = 0.85;
   });
 
   // info — DOM writes only fire when the value actually changes
@@ -420,18 +347,9 @@ function animate(){
     }
   });
 
-  if (composer) composer.render(); else renderer.render(scene,camera);
+  setup.render();
 }
-let loaderHidden = false;
-function hideLoader(){
-  if (loaderHidden) return;
-  loaderHidden = true;
-  const loader=document.getElementById('loader');
-  loader.classList.add('hidden');
-  loader.setAttribute('aria-hidden','true');
-}
-loadingManager.onLoad = hideLoader;
-setTimeout(hideLoader, 5000);
+SPACE.createLoader(loadingManager);
 requestAnimationFrame(()=>{ animate(); });
 SPACE.buildNav('seasons');
 </script>

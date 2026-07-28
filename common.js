@@ -11,6 +11,15 @@ window.SPACE = (function () {
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  // Deterministic PRNG for procedural content (belts, textures, etc.).
+  function seededRandom(seed) {
+    let s = seed >>> 0;
+    return () => {
+      s = (s * 1664525 + 1013904223) >>> 0;
+      return s / 4294967296;
+    };
+  }
+
   // ── GLSL simplex noise (Ashima Arts / Stefan Gustavson) ──
   const GLSL_NOISE = `
 vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
@@ -301,7 +310,9 @@ float fbm(vec3 p) {
     const composer = opts.composer || null;
     const bloomPass = opts.bloomPass || null;
     const fxaaPass = opts.fxaaPass || null;
-    const shadowLight = opts.shadowLight || null;
+    // Late-bound: scenes often create lights after the governor. Call
+    // setShadowLight(light) once the light exists.
+    let shadowLight = opts.shadowLight || null;
     const basePR = Math.min(window.devicePixelRatio || 1, 2);
     // Cap every later tier by basePR so degradation never raises the
     // pixel ratio (e.g. DPR 1 would otherwise jump to 1.25 at tier 2).
@@ -357,6 +368,10 @@ float fbm(vec3 p) {
             tier--; apply(); cooldownUntil = now + 4000; headroomTime = 0;
           }
         } else headroomTime = 0;
+      },
+      setShadowLight(light) {
+        shadowLight = light || null;
+        apply();
       },
       get tier() { return tier; }
     };
@@ -458,6 +473,134 @@ float fbm(vec3 p) {
     return renderer;
   }
 
+  // ── Shared scene bootstrap: renderer + film composer + resize + quality ──
+  // One home for the render pipeline so the four WebGL scenes do not drift.
+  // FXAA in the composer chain handles AA; MSAA on the default framebuffer is
+  // wasted because the scene renders into offscreen targets.
+  function createScene(opts) {
+    opts = opts || {};
+    const container = document.getElementById(opts.containerId || 'canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(opts.background != null ? opts.background : 0x050810);
+    const camera = new THREE.PerspectiveCamera(
+      opts.fov != null ? opts.fov : 45,
+      window.innerWidth / window.innerHeight,
+      opts.near != null ? opts.near : 0.1,
+      opts.far != null ? opts.far : 2000
+    );
+
+    const renderer = createRenderer({ antialias: false, alpha: false });
+    if (!renderer) return null;
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    if (opts.shadowMap) {
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    }
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.1;
+    if (opts.canvasLabel) {
+      renderer.domElement.setAttribute('tabindex', '0');
+      renderer.domElement.setAttribute('role', 'img');
+      renderer.domElement.setAttribute('aria-label', opts.canvasLabel);
+    } else {
+      renderer.domElement.setAttribute('aria-hidden', 'true');
+    }
+    container.appendChild(renderer.domElement);
+
+    let composer = null, bloomPass = null, fxaaPass = null;
+    function setFxaaResolution() {
+      if (!fxaaPass) return;
+      const pr = renderer.getPixelRatio();
+      fxaaPass.material.uniforms.resolution.value.set(
+        1 / (window.innerWidth * pr), 1 / (window.innerHeight * pr)
+      );
+    }
+    if (opts.composer !== false) {
+      try {
+        if (THREE.EffectComposer && THREE.UnrealBloomPass) {
+          composer = new THREE.EffectComposer(renderer);
+          composer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+          composer.setSize(window.innerWidth, window.innerHeight);
+          composer.addPass(new THREE.RenderPass(scene, camera));
+          const b = opts.bloom || {};
+          bloomPass = new THREE.UnrealBloomPass(
+            new THREE.Vector2(window.innerWidth, window.innerHeight),
+            b.strength != null ? b.strength : 0.6,
+            b.radius != null ? b.radius : 0.5,
+            b.threshold != null ? b.threshold : 0.8
+          );
+          composer.addPass(bloomPass);
+          composer.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
+          fxaaPass = new THREE.ShaderPass(THREE.FXAAShader);
+          composer.addPass(fxaaPass);
+          setFxaaResolution();
+        }
+      } catch (err) {
+        console.warn('Post-processing unavailable, falling back to direct render.', err);
+        composer = null;
+      }
+    }
+
+    const quality = createQualityGovernor({
+      bloomPass,
+      composer,
+      fxaaPass,
+      renderer,
+      shadowLight: opts.shadowLight || null
+    });
+
+    function resize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      if (composer) composer.setSize(window.innerWidth, window.innerHeight);
+      setFxaaResolution();
+    }
+    window.addEventListener('resize', opts.onResize
+      ? function () { resize(); opts.onResize(); }
+      : resize);
+
+    function render() {
+      if (composer) composer.render();
+      else renderer.render(scene, camera);
+    }
+
+    return { bloomPass, camera, composer, fxaaPass, quality, render, renderer, resize, scene };
+  }
+
+  // ── Shared play / pause button wiring ──
+  const PLAY_ICON = '<path d="M2 1 L10 6 L2 11 Z"/>';
+  const PAUSE_ICON = '<path d="M2 1 L4.5 1 L4.5 11 L2 11 Z M7.5 1 L10 1 L10 11 L7.5 11 Z"/>';
+  function wirePlayPause(playBtn, playIcon, sim) {
+    function update() {
+      playIcon.innerHTML = sim.playing ? PAUSE_ICON : PLAY_ICON;
+      playBtn.setAttribute('aria-label', sim.playing ? 'Pause simulation' : 'Play simulation');
+    }
+    playBtn.addEventListener('click', () => { sim.playing = !sim.playing; update(); });
+    update();
+    return update;
+  }
+
+  // ── Hold the loader until assets land; a failed request can never trap
+  // anyone on the loader thanks to the safety timeout. ──
+  function createLoader(loadingManager, timeoutMs) {
+    let hidden = false;
+    function hide() {
+      if (hidden) return;
+      hidden = true;
+      const loader = document.getElementById('loader');
+      if (loader) {
+        loader.classList.add('hidden');
+        loader.setAttribute('aria-hidden', 'true');
+      }
+    }
+    if (loadingManager) loadingManager.onLoad = hide;
+    window.setTimeout(hide, timeoutMs != null ? timeoutMs : 5000);
+    return hide;
+  }
+
   // ── Dismiss the gesture hint after the first real interaction ──
   function initMobileHints() {
     const hints = document.querySelectorAll('.hint');
@@ -477,6 +620,9 @@ float fbm(vec3 p) {
     // Auto-fade after a few seconds so it never permanently covers the scene.
     window.setTimeout(dismiss, 8000);
   }
+
+  // Body catalog lives in data.js (SPACE_DATA). This module stays
+  // render primitives + shared chrome only.
 
   // ── Shared scene switcher used by every page ──
   const SCENES = [
@@ -577,9 +723,11 @@ float fbm(vec3 p) {
     bindCameraKeys,
     buildNav,
     clamp,
+    createLoader,
     createOrbitControls,
     createQualityGovernor,
     createRenderer,
+    createScene,
     createStarfield,
     createSun,
     failWebGL,
@@ -589,6 +737,8 @@ float fbm(vec3 p) {
     initMobileInfoPanels,
     prefersReducedMotion,
     projectToScreen,
-    setText
+    seededRandom,
+    setText,
+    wirePlayPause
   };
 })();

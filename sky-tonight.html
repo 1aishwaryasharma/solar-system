@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=20260728-7">
+<link rel="stylesheet" href="common.css?v=20260728-14">
 <style>
   #sky { position: fixed; inset: 0; z-index: 0; display: block; }
   .info-panel { top: 104px; width: 340px; max-height: calc(100dvh - 220px); overflow: auto; }
@@ -38,8 +38,6 @@
   .sky-where.evening .tag { color: #f4c560; } .sky-where.morning .tag { color: #6ab0ff; }
   .sky-where.allnight .tag { color: #8fd0a0; } .sky-where.hidden .tag { color: var(--ink-faint); }
   .sky-where.scope .tag { color: var(--accent-warm); }
-  .info-wow { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13px; line-height: 1.5; color: var(--ink-dim); font-weight: 300; }
-  .info-wow .fact-tag { display:block; font-family:'Fragment Mono',monospace; font-size:9px; letter-spacing:0.2em; text-transform:uppercase; color:var(--accent); margin-bottom:6px; }
   .date-controls { position: fixed; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 16px; z-index: 10; background: var(--panel); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--line); border-radius: 2px; padding: 12px 20px; max-width: calc(100vw - 32px); }
   .date-label { font-family: 'Fragment Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-dim); }
   .date-value { font-family: 'Fragment Mono', monospace; font-size: 13px; color: var(--accent); min-width: 118px; text-align: center; }
@@ -88,11 +86,11 @@
   <h2 class="info-title">Which ones can I see?</h2>
   <p class="info-body">Planets shine by reflecting sunlight. Whether one shows up in the evening, the morning, or all night depends mostly on its <strong>angle from the Sun</strong>. Here's a rough guide for each planet, worked out from its real orbit:</p>
   <div class="sky-list" id="sky-list"></div>
-  <div class="info-wow">
+  <div class="fact-callout">
     <span class="fact-tag">✦ Try it</span>
     On a clear night, a bright planet shines with a steady light — it doesn't twinkle the way stars do. Slide the date forward to watch the fast inner planets race around the Sun.
   </div>
-  <div class="info-wow">
+  <div class="fact-callout">
     <span class="fact-tag">About this guide</span>
     This is worked out from each planet's <strong>angle from the Sun</strong> (its elongation). It's a good rough guide, but the exact time and spot a planet appears also depend on <strong>where you live</strong> and the time of night — so treat it as a starting point, then go look!
   </div>
@@ -106,22 +104,13 @@
   <button type="button" class="today-btn" id="today-btn">Today</button>
 </div>
 
-<script src="common.js?v=20260728-7"></script>
+<script src="common.js?v=20260728-14"></script>
+<script src="data.js?v=20260728-14"></script>
 <script>
 'use strict';
 const clamp = SPACE.clamp;
 
-// Mean orbital elements (J2000): L0 = mean longitude (deg), n = deg/day, a = semi-major axis (AU)
-const BODIES = [
-  { name:'Mercury', L0:252.25084, n:4.09233445, a:0.387098, dot:'#b9b2a6', naked:true },
-  { name:'Venus',   L0:181.97973, n:1.60213047, a:0.723332, dot:'#e8cd8a', naked:true },
-  { name:'Earth',   L0:100.46435, n:0.98560912, a:1.000000, dot:'#6ab0ff', earth:true },
-  { name:'Mars',    L0:355.45332, n:0.52403304, a:1.523679, dot:'#d0674a', naked:true },
-  { name:'Jupiter', L0:34.40438,  n:0.08308676, a:5.20260,  dot:'#d9b48a', naked:true },
-  { name:'Saturn',  L0:49.94432,  n:0.03344414, a:9.55491,  dot:'#e6d3a0', naked:true },
-  { name:'Uranus',  L0:313.23218, n:0.01172834, a:19.21845, dot:'#a9e0e2', naked:false },
-  { name:'Neptune', L0:304.88003, n:0.00598103, a:30.11039, dot:'#3f6fd8', naked:false }
-];
+const BODIES = SPACE_DATA.planets();
 const D2R = Math.PI/180, R2D = 180/Math.PI;
 const norm360 = x => ((x % 360) + 360) % 360;
 const norm180 = x => { let v = norm360(x); return v > 180 ? v - 360 : v; };
@@ -133,19 +122,19 @@ function positions(dOffset){
   const out = {};
   BODIES.forEach(b => {
     const L = norm360(b.L0 + b.n * d) * D2R;
-    out[b.name] = { x: b.a * Math.cos(L), y: b.a * Math.sin(L), a: b.a, Ldeg: L*R2D };
+    out[b.key] = { x: b.au * Math.cos(L), y: b.au * Math.sin(L), a: b.au, Ldeg: L*R2D };
   });
   return out;
 }
 
 // classify each planet's visibility from Earth
 function skyInfo(pos){
-  const e = pos.Earth;
+  const e = pos.earth;
   const sunLon = Math.atan2(-e.y, -e.x) * R2D; // geocentric direction to Sun
   const list = [];
   BODIES.forEach(b => {
-    if (b.earth) return;
-    const p = pos[b.name];
+    if (b.key === 'earth') return;
+    const p = pos[b.key];
     const gx = p.x - e.x, gy = p.y - e.y;
     const planetLon = Math.atan2(gy, gx) * R2D;
     const diff = norm180(planetLon - sunLon); // + = east of Sun (evening), − = west (morning)
@@ -191,9 +180,9 @@ function draw(dOffset, t){
   const maxR = Math.min(W, H)*0.42;
   // orbits
   BODIES.forEach(b => {
-    const r = orbitRadiusPx(b.a, maxR);
-    ctx.strokeStyle = b.earth ? 'rgba(106,176,255,0.35)' : 'rgba(232,236,244,0.10)';
-    ctx.lineWidth = b.earth ? 1.4 : 1;
+    const r = orbitRadiusPx(b.au, maxR);
+    ctx.strokeStyle = b.key === 'earth' ? 'rgba(106,176,255,0.35)' : 'rgba(232,236,244,0.10)';
+    ctx.lineWidth = b.key === 'earth' ? 1.4 : 1;
     ctx.beginPath(); ctx.arc(cx, cy, r, 0, 6.283); ctx.stroke();
   });
   // Sun glow
@@ -202,22 +191,23 @@ function draw(dOffset, t){
   ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,26,0,6.283); ctx.fill();
   ctx.fillStyle='#ffe9b0'; ctx.beginPath(); ctx.arc(cx,cy,7,0,6.283); ctx.fill();
   // Earth→Sun sight line
-  const eR = orbitRadiusPx(1, maxR), eL = pos.Earth.Ldeg*D2R;
+  const eR = orbitRadiusPx(1, maxR), eL = pos.earth.Ldeg*D2R;
   const ex = cx + Math.cos(eL)*eR, ey = cy + Math.sin(eL)*eR;
   ctx.strokeStyle='rgba(106,176,255,0.25)'; ctx.setLineDash([3,4]);
   ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(ex,ey); ctx.stroke(); ctx.setLineDash([]);
   // planets
   ctx.font = "10px 'Fragment Mono', monospace";
   BODIES.forEach(b => {
-    const p = pos[b.name];
-    const r = orbitRadiusPx(b.a, maxR);
+    const p = pos[b.key];
+    const r = orbitRadiusPx(b.au, maxR);
     const L = p.Ldeg*D2R;
     const x = cx + Math.cos(L)*r, y = cy + Math.sin(L)*r;
+    const isEarth = b.key === 'earth';
     ctx.fillStyle = b.dot;
-    ctx.beginPath(); ctx.arc(x, y, b.earth?4.5:3.6, 0, 6.283); ctx.fill();
-    if (b.earth){ ctx.strokeStyle='rgba(106,176,255,0.8)'; ctx.lineWidth=1.4; ctx.beginPath(); ctx.arc(x,y,8,0,6.283); ctx.stroke(); }
+    ctx.beginPath(); ctx.arc(x, y, isEarth?4.5:3.6, 0, 6.283); ctx.fill();
+    if (isEarth){ ctx.strokeStyle='rgba(106,176,255,0.8)'; ctx.lineWidth=1.4; ctx.beginPath(); ctx.arc(x,y,8,0,6.283); ctx.stroke(); }
     ctx.fillStyle = 'rgba(232,236,244,0.7)';
-    ctx.fillText(b.earth?'Earth (us)':b.name, x+8, y-6);
+    ctx.fillText(isEarth?'Earth (us)':b.name, x+8, y-6);
   });
 }
 
