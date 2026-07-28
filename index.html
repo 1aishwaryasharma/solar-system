@@ -24,85 +24,15 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=20260728-7">
+<link rel="stylesheet" href="common.css?v=20260728-13">
 <style>
   /* Shared design tokens & component styles live in common.css.
      Only page-specific rules for the light study remain here. */
   .info-panel { top: 132px; }
+  .info-panel .fact-callout .fact-tag { color: var(--accent-warm); }
 
-  .info-fact {
-    margin-top: 14px;
-    padding-top: 12px;
-    border-top: 1px solid var(--line);
-    font-size: 13px;
-    line-height: 1.5;
-    color: var(--ink-dim);
-    font-weight: 300;
-  }
-  .info-fact .fact-tag {
-    display: block;
-    font-family: 'Fragment Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--accent-warm);
-    margin-bottom: 6px;
-  }
-
-  /* ──── Side Presets ──── */
-  .presets {
-    position: fixed;
-    top: 50%;
-    right: 24px;
-    transform: translateY(-50%);
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    z-index: 10;
-  }
-
-  .preset-btn {
-    background: var(--panel);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--line);
-    border-radius: 2px;
-    padding: 12px 16px 12px 14px;
-    color: var(--ink);
-    font-family: 'Newsreader', serif;
-    font-size: 13px;
-    font-weight: 400;
-    letter-spacing: 0.01em;
-    cursor: pointer;
-    text-align: left;
-    width: 200px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    transition: all 0.25s ease;
-    position: relative;
-  }
-  .preset-btn:hover {
-    background: var(--panel-bright);
-    border-color: rgba(244, 197, 96, 0.3);
-    transform: translateX(-3px);
-  }
-  .preset-btn.active {
-    border-color: var(--accent);
-    background: rgba(244, 197, 96, 0.08);
-  }
-  .preset-btn .num {
-    font-family: 'Fragment Mono', monospace;
-    font-size: 9px;
-    color: var(--ink-faint);
-    letter-spacing: 0.1em;
-    width: 16px;
-  }
-  .preset-btn.active .num { color: var(--accent); }
-  .preset-btn .lbl em {
-    font-style: italic;
-    color: var(--accent-warm);
-  }
+  /* ──── Side presets use the shared .side-rail / .rail-btn in common.css ──── */
+  .preset-btn .num { margin-left: 0; }
 
   /* ──── Tooltip label colour variants (base .label-3d is in common.css) ──── */
   .label-3d.sun { color: var(--accent); border-color: rgba(244, 197, 96, 0.3); }
@@ -123,22 +53,12 @@
     }
     .info-title { font-size: 18px; }
     .info-body { font-size: 12px; }
-    .info-fact { font-size: 11px; margin-top: 10px; padding-top: 8px; }
-    .presets {
-      top: 80px;
-      right: 16px;
-      transform: none;
-    }
-    .preset-btn { width: 150px; padding: 8px 10px; font-size: 11px; }
-    .preset-btn .num { display: none; }
+    .info-panel .fact-callout { font-size: 11px; margin-top: 10px; padding-top: 8px; }
     .speed-slider { width: 80px; }
     .toggle-btn { padding: 5px 8px; font-size: 8px; }
   }
   @media (max-height: 520px) and (orientation: landscape) {
     .info-panel { top: 80px !important; max-height: calc(100dvh - 156px) !important; }
-    .presets { top: 64px; right: 16px; transform: none; }
-    .preset-btn { width: 180px; padding: 7px 10px; font-size: 11px; }
-    .preset-btn .num { display: none; }
   }
 </style>
 </head>
@@ -176,30 +96,30 @@
     the boundary between day and night — called the <strong>terminator</strong> — sweeps across
     the surface, giving every place its turn in the light.
   </p>
-  <div class="info-fact" id="info-fact">
+  <div class="fact-callout" id="info-fact">
     <span class="fact-tag">✦ Did you know?</span>
     <span id="info-fact-text"></span>
   </div>
 </aside>
 
-<div class="presets" id="presets" role="group" aria-label="Observation presets">
-  <button type="button" class="preset-btn active" data-preset="free" aria-pressed="true">
+<div class="side-rail" id="presets" role="group" aria-label="Observation presets">
+  <button type="button" class="rail-btn preset-btn active" data-preset="free" aria-pressed="true">
     <span class="num">01</span>
     <span class="lbl">Free <em>observation</em></span>
   </button>
-  <button type="button" class="preset-btn" data-preset="daynight" aria-pressed="false">
+  <button type="button" class="rail-btn preset-btn" data-preset="daynight" aria-pressed="false">
     <span class="num">02</span>
     <span class="lbl">Day &amp; <em>Night</em></span>
   </button>
-  <button type="button" class="preset-btn" data-preset="phases" aria-pressed="false">
+  <button type="button" class="rail-btn preset-btn" data-preset="phases" aria-pressed="false">
     <span class="num">03</span>
     <span class="lbl">Lunar <em>Phases</em></span>
   </button>
-  <button type="button" class="preset-btn" data-preset="solar" aria-pressed="false">
+  <button type="button" class="rail-btn preset-btn" data-preset="solar" aria-pressed="false">
     <span class="num">04</span>
     <span class="lbl">Solar <em>Eclipse</em></span>
   </button>
-  <button type="button" class="preset-btn" data-preset="lunar" aria-pressed="false">
+  <button type="button" class="rail-btn preset-btn" data-preset="lunar" aria-pressed="false">
     <span class="num">05</span>
     <span class="lbl">Lunar <em>Eclipse</em></span>
   </button>
@@ -230,7 +150,8 @@
 <div class="label-3d earth" id="label-earth" aria-hidden="true">Earth</div>
 <div class="label-3d moon" id="label-moon" aria-hidden="true">Moon</div>
 
-<script src="common.js?v=20260728-7"></script>
+<script src="common.js?v=20260728-13"></script>
+<script src="data.js?v=20260728-13"></script>
 <script src="vendor/three/three.min.js"></script>
 <script src="vendor/three/CopyShader.js"></script>
 <script src="vendor/three/LuminosityHighPassShader.js"></script>
@@ -246,30 +167,17 @@
 // ─────────────────────────────────────────────────────────
 // 1. SCENE SETUP
 // ─────────────────────────────────────────────────────────
-const container = document.getElementById('canvas-container');
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x050810);
-scene.fog = null;
-
-const camera = new THREE.PerspectiveCamera(
-  45, window.innerWidth / window.innerHeight, 0.1, 2000
-);
-
-// FXAA in the composer chain handles AA; MSAA on the default framebuffer is
-// wasted because the scene renders into offscreen targets.
-const renderer = SPACE.createRenderer({ antialias: false, alpha: false });
-if (!renderer) throw new Error('WebGL unavailable');
-renderer.domElement.setAttribute('tabindex', '0');
-renderer.domElement.setAttribute('role', 'img');
-renderer.domElement.setAttribute('aria-label', '3D model of the Sun, Earth, and Moon. Focus it and use the arrow keys to rotate, plus and minus to zoom.');
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.outputEncoding = THREE.sRGBEncoding;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.1;
-container.appendChild(renderer.domElement);
+const setup = SPACE.createScene({
+  bloom: { strength: 0.55, radius: 0.45, threshold: 0.82 },
+  canvasLabel: '3D model of the Sun, Earth, and Moon. Focus it and use the arrow keys to rotate, plus and minus to zoom.',
+  shadowMap: true
+});
+if (!setup) throw new Error('WebGL unavailable');
+const scene = setup.scene;
+const camera = setup.camera;
+const renderer = setup.renderer;
+const composer = setup.composer;
+const quality = setup.quality;
 
 // ─────────────────────────────────────────────────────────
 // 2. PHYSICAL RATIOS AND DISPLAY SCALES
@@ -282,7 +190,7 @@ const EARTH_RADIUS  = 1.0;
 const MOON_RADIUS   = 0.2727;
 const SUN_DISTANCE  = 32;     // compressed display distance
 const MOON_DISTANCE = 4.2;
-const EARTH_TILT = THREE.MathUtils.degToRad(23.4393);
+const EARTH_TILT = THREE.MathUtils.degToRad(SPACE_DATA.BODIES.earth.tiltDeg);
 const MOON_ORBIT_INCLINATION = THREE.MathUtils.degToRad(5.145);
 const MOON_ORBIT_ECCENTRICITY = 0.0549;
 const EARTH_DAYS_PER_YEAR = 365.256;
@@ -320,204 +228,14 @@ sunLight.shadow.camera.bottom = -SHADOW_BOUND;
 sunLight.shadow.bias = -0.0005;
 scene.add(sunLight);
 scene.add(sunLight.target);
+quality.setShadowLight(sunLight);
 
 // faint ambient so dark sides aren't pitch black
 scene.add(new THREE.AmbientLight(0x223355, 0.18));
 
 // ─────────────────────────────────────────────────────────
-// 4. EARTH (textured day surface and night lights)
+// 4. EARTH (photographic day/night maps + procedural moon)
 // ─────────────────────────────────────────────────────────
-// shared continent shapes — used for both land masses and city lights
-const CONTINENTS = [
-  { cx: 450, cy: 320, color: '#3d5a3a', lights: 150, pts: [   // North America
-    [-140,-80],[-100,-100],[-40,-110],[20,-90],[60,-50],[80,0],[60,40],
-    [30,80],[-10,110],[-60,120],[-110,90],[-150,40],[-160,-10],[-150,-50]
-  ]},
-  { cx: 540, cy: 680, color: '#3d5a3a', lights: 80, pts: [    // South America
-    [-30,-110],[10,-100],[40,-60],[55,0],[40,80],[15,140],[-15,170],
-    [-40,150],[-50,80],[-55,0],[-50,-60]
-  ]},
-  { cx: 680, cy: 200, color: '#a8b2bd', lights: 4, pts: [     // Greenland
-    [-40,-30],[20,-40],[40,-10],[35,30],[0,40],[-35,20]
-  ]},
-  { cx: 1080, cy: 540, color: '#5a4a2a', lights: 90, pts: [   // Africa
-    [-80,-130],[-30,-150],[40,-130],[80,-90],[100,-30],[90,40],[60,110],
-    [20,160],[-30,170],[-60,130],[-90,60],[-100,-20],[-95,-80]
-  ]},
-  { cx: 1060, cy: 320, color: '#3d5a3a', lights: 170, pts: [  // Europe
-    [-70,-30],[-30,-50],[40,-40],[80,-20],[60,20],[10,30],[-40,20],[-70,0]
-  ]},
-  { cx: 1380, cy: 360, color: '#4a5a35', lights: 220, pts: [  // Asia
-    [-180,-60],[-100,-80],[0,-90],[120,-70],[200,-40],[240,0],[220,40],
-    [160,70],[80,90],[0,100],[-80,80],[-160,40],[-200,0]
-  ]},
-  { cx: 1520, cy: 580, color: '#3d5a3a', lights: 100, pts: [  // SE Asia / Indonesia
-    [-60,-20],[0,-30],[60,-15],[100,10],[80,30],[20,40],[-40,30],[-80,10]
-  ]},
-  { cx: 1680, cy: 720, color: '#7a6a3a', lights: 45, pts: [   // Australia
-    [-90,-40],[-40,-50],[40,-45],[90,-20],[100,20],[60,50],[-10,55],
-    [-70,40],[-100,10]
-  ]}
-];
-
-function traceContinentPath(ctx, cont) {
-  const pts = cont.pts.map(([x, y]) => [cont.cx + x, cont.cy + y]);
-  const last = pts[pts.length - 1];
-  const first = pts[0];
-  ctx.beginPath();
-  ctx.moveTo((last[0] + first[0]) / 2, (last[1] + first[1]) / 2);
-  pts.forEach((point, i) => {
-    const next = pts[(i + 1) % pts.length];
-    ctx.quadraticCurveTo(
-      point[0], point[1],
-      (point[0] + next[0]) / 2,
-      (point[1] + next[1]) / 2
-    );
-  });
-  ctx.closePath();
-}
-
-function createEarthTexture() {
-  const W = 2048;
-  const H = 1024;
-  const c = document.createElement('canvas');
-  c.width = W; c.height = H;
-  const ctx = c.getContext('2d');
-
-  // Ocean — gradient with subtle latitude variation
-  const og = ctx.createLinearGradient(0, 0, 0, 1024);
-  og.addColorStop(0,    '#0a2540');
-  og.addColorStop(0.3,  '#0d3a6b');
-  og.addColorStop(0.5,  '#0f4a85');
-  og.addColorStop(0.7,  '#0d3a6b');
-  og.addColorStop(1,    '#0a2540');
-  ctx.fillStyle = og;
-  ctx.fillRect(0, 0, W, H);
-
-  // Subtle ocean noise
-  for (let i = 0; i < 5000; i++) {
-    const x = Math.random() * W;
-    const y = Math.random() * H;
-    const a = Math.random() * 0.08;
-    ctx.fillStyle = `rgba(255,255,255,${a})`;
-    ctx.fillRect(x, y, 1, 1);
-  }
-
-  // Continents — softened coastlines with shallow-water edges and restrained
-  // inland variation, keeping the map readable without looking like cut-outs.
-  CONTINENTS.forEach(cont => {
-    ctx.save();
-    traceContinentPath(ctx, cont);
-    ctx.fillStyle = cont.color;
-    ctx.fill();
-
-    ctx.strokeStyle = 'rgba(75, 145, 155, 0.32)';
-    ctx.lineWidth = 8;
-    ctx.stroke();
-
-    ctx.clip();
-    for (let i = 0; i < 140; i++) {
-      const x = cont.cx + (Math.random() - 0.5) * 330;
-      const y = cont.cy + (Math.random() - 0.5) * 260;
-      ctx.fillStyle = Math.random() < 0.55
-        ? `rgba(15,24,12,${0.025 + Math.random() * 0.055})`
-        : `rgba(205,190,125,${0.02 + Math.random() * 0.045})`;
-      ctx.beginPath();
-      ctx.ellipse(x, y, 5 + Math.random() * 20, 2 + Math.random() * 8, Math.random() * Math.PI, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.restore();
-  });
-
-  // Irregular, periodic polar boundaries avoid the hard rings and pinched
-  // "football" points produced by straight strips on an equirectangular map.
-  const northEdge = x => 43
-    + Math.sin((x / W) * Math.PI * 2 * 3) * 10
-    + Math.sin((x / W) * Math.PI * 2 * 7 + 0.8) * 5;
-  const southEdge = x => 936
-    + Math.sin((x / W) * Math.PI * 2 * 2 + 0.4) * 15
-    + Math.sin((x / W) * Math.PI * 2 * 5) * 7;
-
-  ctx.fillStyle = 'rgba(225,234,242,0.76)';
-  ctx.beginPath();
-  ctx.moveTo(0, 0);
-  ctx.lineTo(W, 0);
-  for (let x = W; x >= 0; x -= 8) ctx.lineTo(x, northEdge(x));
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = '#dce6ee';
-  ctx.beginPath();
-  ctx.moveTo(0, H);
-  ctx.lineTo(W, H);
-  for (let x = W; x >= 0; x -= 8) ctx.lineTo(x, southEdge(x));
-  ctx.closePath();
-  ctx.fill();
-
-  const tex = new THREE.CanvasTexture(c);
-  tex.encoding = THREE.sRGBEncoding;
-  tex.anisotropy = 8;
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.wrapT = THREE.ClampToEdgeWrapping;
-  return tex;
-}
-
-// A neutral relief map keeps continents tactile without turning color changes
-// (especially the polar ice) into artificial ridges.
-function createEarthBumpTexture() {
-  const c = document.createElement('canvas');
-  c.width = 2048; c.height = 1024;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = '#777';
-  ctx.fillRect(0, 0, c.width, c.height);
-
-  CONTINENTS.forEach(cont => {
-    ctx.fillStyle = '#999';
-    traceContinentPath(ctx, cont);
-    ctx.fill();
-  });
-
-  const tex = new THREE.CanvasTexture(c);
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.wrapT = THREE.ClampToEdgeWrapping;
-  tex.anisotropy = 8;
-  return tex;
-}
-
-// city lights, clustered on the continents — visible on the night side only
-function createNightTexture() {
-  const c = document.createElement('canvas');
-  c.width = 2048; c.height = 1024;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = '#000000';
-  ctx.fillRect(0, 0, 2048, 1024);
-  ctx.globalCompositeOperation = 'lighter';
-
-  CONTINENTS.forEach(cont => {
-    for (let i = 0; i < cont.lights; i++) {
-      const p = cont.pts[Math.floor(Math.random() * cont.pts.length)];
-      const t = Math.pow(Math.random(), 0.55);
-      const x = cont.cx + p[0] * t * 0.8 + (Math.random() - 0.5) * 36;
-      const y = cont.cy + p[1] * t * 0.8 + (Math.random() - 0.5) * 36;
-      const big = Math.random() < 0.14;
-      const r = big ? 5 + Math.random() * 8 : 1.2 + Math.random() * 2.4;
-      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-      g.addColorStop(0, `rgba(255, 216, 145, ${big ? 0.55 : 0.85})`);
-      g.addColorStop(0.5, 'rgba(255, 180, 90, 0.25)');
-      g.addColorStop(1, 'rgba(255, 160, 60, 0)');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(x, y, r, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  });
-
-  const tex = new THREE.CanvasTexture(c);
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.wrapT = THREE.ClampToEdgeWrapping;
-  return tex;
-}
-
 function createMoonTextures() {
   const W = 1024;
   const H = 512;
@@ -540,11 +258,7 @@ function createMoonTextures() {
   bumpCtx.fillRect(0, 0, W, H);
 
   // Repeatable surface detail keeps the Moon stable between reloads.
-  let seed = 7419;
-  const random = () => {
-    seed = (seed * 1664525 + 1013904223) >>> 0;
-    return seed / 4294967296;
-  };
+  const random = SPACE.seededRandom(7419);
 
   for (let i = 0; i < 3500; i++) {
     const shade = 118 + Math.floor(random() * 48);
@@ -760,49 +474,6 @@ moonOrbitFrame.add(orbitLine);
 scene.add(moonOrbitFrame);
 
 // ─────────────────────────────────────────────────────────
-// 6. POST-PROCESSING (bloom + gamma + FXAA)
-// ─────────────────────────────────────────────────────────
-let composer = null;
-let fxaaPass = null;
-let bloomPass = null;
-
-function setFxaaResolution() {
-  if (!fxaaPass) return;
-  const pr = renderer.getPixelRatio();
-  fxaaPass.material.uniforms.resolution.value.set(
-    1 / (window.innerWidth * pr),
-    1 / (window.innerHeight * pr)
-  );
-}
-
-try {
-  if (THREE.EffectComposer && THREE.UnrealBloomPass) {
-    composer = new THREE.EffectComposer(renderer);
-    composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    composer.setSize(window.innerWidth, window.innerHeight);
-
-    composer.addPass(new THREE.RenderPass(scene, camera));
-
-    bloomPass = new THREE.UnrealBloomPass(
-      new THREE.Vector2(window.innerWidth, window.innerHeight),
-      0.55,   // strength
-      0.45,   // radius
-      0.82    // threshold — only the sun and bright stars bloom
-    );
-    composer.addPass(bloomPass);
-
-    composer.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
-
-    fxaaPass = new THREE.ShaderPass(THREE.FXAAShader);
-    composer.addPass(fxaaPass);
-    setFxaaResolution();
-  }
-} catch (err) {
-  console.warn('Post-processing unavailable, falling back to direct render.', err);
-  composer = null;
-}
-
-// ─────────────────────────────────────────────────────────
 // 7. CAMERA CONTROLS (shared orbit controls)
 // ─────────────────────────────────────────────────────────
 const cam = SPACE.createOrbitControls(camera, renderer.domElement, {
@@ -810,25 +481,6 @@ const cam = SPACE.createOrbitControls(camera, renderer.domElement, {
   minDistance: 3
 });
 SPACE.bindCameraKeys(cam, { maxDistance: 55, minDistance: 3 });
-
-// Adapt render cost to what the device can actually hold.
-const quality = SPACE.createQualityGovernor({
-  bloomPass,
-  composer,
-  fxaaPass,
-  renderer,
-  shadowLight: sunLight
-});
-
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  if (composer) {
-    composer.setSize(window.innerWidth, window.innerHeight);
-    setFxaaResolution();
-  }
-});
 
 // ─────────────────────────────────────────────────────────
 // 8. SIMULATION STATE
@@ -878,19 +530,11 @@ const infoTitle  = document.getElementById('info-title');
 const infoBody   = document.getElementById('info-body');
 const infoFactText = document.getElementById('info-fact-text');
 
-const PLAY_ICON = '<path d="M2 1 L10 6 L2 11 Z"/>';
-const PAUSE_ICON = '<path d="M2 1 L4.5 1 L4.5 11 L2 11 Z M7.5 1 L10 1 L10 11 L7.5 11 Z"/>';
-
-function updatePlayButton() {
-  playIcon.innerHTML = sim.playing ? PAUSE_ICON : PLAY_ICON;
-  playBtn.setAttribute('aria-label', sim.playing ? 'Pause simulation' : 'Play simulation');
-}
+const updatePlayButton = SPACE.wirePlayPause(playBtn, playIcon, sim);
 function setPlaying(playing) {
   sim.playing = playing;
   updatePlayButton();
 }
-playBtn.addEventListener('click', () => setPlaying(!sim.playing));
-updatePlayButton();
 
 speedSlider.addEventListener('input', () => {
   const v = parseFloat(speedSlider.value);
@@ -1187,22 +831,10 @@ function animate() {
   SPACE.setText(metaPhase, describePhase(moon.position, sunGroup.position));
   SPACE.setText(metaEvent, detectEvent(moon.position));
 
-  if (composer) composer.render();
-  else renderer.render(scene, camera);
+  setup.render();
 }
 
-// Hold the loader until the photographic textures actually land; the safety
-// timeout guarantees a failed request can never trap anyone on the loader.
-let loaderHidden = false;
-function hideLoader() {
-  if (loaderHidden) return;
-  loaderHidden = true;
-  const loader = document.getElementById('loader');
-  loader.classList.add('hidden');
-  loader.setAttribute('aria-hidden', 'true');
-}
-loadingManager.onLoad = hideLoader;
-setTimeout(hideLoader, 5000);
+SPACE.createLoader(loadingManager);
 requestAnimationFrame(() => { animate(); });
 
 // Start with free preset info
