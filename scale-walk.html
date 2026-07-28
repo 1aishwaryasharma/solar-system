@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=20260728-13">
+<link rel="stylesheet" href="common.css?v=20260728-14">
 <style>
   .info-panel { top: 104px; width: 350px; }
   .info-title { font-size: 26px; line-height: 1.1; }
@@ -100,8 +100,9 @@
 <script src="vendor/three/ShaderPass.js"></script>
 <script src="vendor/three/UnrealBloomPass.js"></script>
 <script src="vendor/three/FXAAShader.js"></script>
-<script src="common.js?v=20260728-13"></script>
-<script src="data.js?v=20260728-13"></script>
+<script src="common.js?v=20260728-14"></script>
+<script src="data.js?v=20260728-14"></script>
+<script src="tour-textures.js?v=20260728-14"></script>
 <script>
 'use strict';
 const clamp = SPACE.clamp;
@@ -116,14 +117,13 @@ if (!setup) throw new Error('WebGL unavailable');
 const scene = setup.scene;
 const camera = setup.camera;
 const renderer = setup.renderer;
-const composer = setup.composer;
 const quality = setup.quality;
 
 const starfield = SPACE.createStarfield({ count: 6000, innerR: 1500, outerR: 3000 });
 scene.add(starfield.points);
 
 const AU = 40; // display units per AU (distances are honest, sizes gently enlarged)
-// Walk-specific everyday-object analogies; physical fields come from SPACE_DATA.
+// Walk-specific everyday-object analogies; physical + texture fields come from SPACE_DATA.
 const OBJECT = {
   earth: 'a peppercorn',
   jupiter: 'a walnut',
@@ -138,7 +138,7 @@ const EARTH_R_KM = SPACE_DATA.BODIES.earth.radiusKm;
 const PLANETS = SPACE_DATA.planets().map(b => {
   const object = OBJECT[b.key];
   if (!object) throw new Error('Missing scale analogy for ' + b.key);
-  return { au: b.au, dia: b.radiusKm * 2, dot: b.dot, name: b.name, object, radiusKm: b.radiusKm };
+  return Object.assign(b, { dia: b.radiusKm * 2, object });
 });
 
 // Sun at origin
@@ -147,132 +147,216 @@ scene.add(SUN.group);
 scene.add(new THREE.PointLight(0xfff2e0, 2.6, 0, 0));
 scene.add(new THREE.AmbientLight(0x334466, 0.35));
 
+// Shared Grand Tour textures (Earth day map goes through LoadingManager).
+const tourTextures = createTourTextures(renderer);
+const planetTexture = tourTextures.planetTexture;
+const makeRingTexture = tourTextures.makeRingTexture;
+
 // the path line along +X
-const pathEnd = PLANETS[PLANETS.length-1].au * AU;
+const pathEnd = PLANETS[PLANETS.length - 1].au * AU;
 scene.add(new THREE.Line(
-  new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(pathEnd,0,0)]),
+  new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(pathEnd, 0, 0)]),
   new THREE.LineBasicMaterial({ color: 0x6ab0ff, transparent: true, opacity: 0.12 })));
 
-const labelLayer = document.createElement('div'); document.body.appendChild(labelLayer);
-function makeLabel(text, color){
-  const el=document.createElement('div');
-  el.className='label-3d'; el.textContent=text; el.style.color=color;
-  el.setAttribute('aria-hidden','true');
+const labelLayer = document.createElement('div');
+document.body.appendChild(labelLayer);
+function makeLabel(text, color) {
+  const el = document.createElement('div');
+  el.className = 'label-3d';
+  el.textContent = text;
+  el.style.color = color;
+  el.setAttribute('aria-hidden', 'true');
   labelLayer.appendChild(el);
   return el;
 }
 SUN.label = makeLabel('The Sun', '#f4c560');
 
+const unitSphere = new THREE.SphereGeometry(1, 48, 48);
 PLANETS.forEach(p => {
   p.x = p.au * AU;
-  p.dispR = clamp(0.5 * Math.sqrt(p.radiusKm/EARTH_R_KM), 0.22, 1.7);
-  const mesh = new THREE.Mesh(new THREE.SphereGeometry(p.dispR, 48, 48),
-    new THREE.MeshStandardMaterial({ color: p.dot, roughness: 1, metalness: 0, emissive: new THREE.Color(p.dot).multiplyScalar(0.04) }));
-  mesh.position.set(p.x, 0, 0);
-  scene.add(mesh); p.mesh = mesh;
+  p.dispR = clamp(0.5 * Math.sqrt(p.radiusKm / EARTH_R_KM), 0.22, 1.7);
+
+  p.holder = new THREE.Group();
+  p.holder.position.set(p.x, 0, 0);
+  scene.add(p.holder);
+
+  p.tilt = new THREE.Group();
+  p.tilt.rotation.z = THREE.MathUtils.degToRad(p.tiltDeg);
+  p.holder.add(p.tilt);
+
+  const mesh = new THREE.Mesh(unitSphere,
+    new THREE.MeshStandardMaterial({ map: planetTexture(p), roughness: 1, metalness: 0 }));
+  mesh.scale.setScalar(p.dispR);
+  p.tilt.add(mesh);
+  p.mesh = mesh;
+
+  if (p.rings) {
+    const inner = p.dispR * 1.35;
+    const outer = p.dispR * 2.30;
+    const ringGeo = new THREE.RingGeometry(inner, outer, 96);
+    const pos = ringGeo.attributes.position;
+    const uv = ringGeo.attributes.uv;
+    const v3 = new THREE.Vector3();
+    for (let k = 0; k < pos.count; k++) {
+      v3.fromBufferAttribute(pos, k);
+      uv.setXY(k, (v3.length() - inner) / (outer - inner), 0.5);
+    }
+    const ringMesh = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({
+      depthWrite: false,
+      map: makeRingTexture(),
+      opacity: 0.9,
+      side: THREE.DoubleSide,
+      transparent: true
+    }));
+    ringMesh.rotation.x = Math.PI / 2;
+    p.tilt.add(ringMesh);
+  }
+
   // the floating label doubles as the findability marker: a pin/caret that
   // points down at the planet (see .label-pin) — so far specks stay locatable
   // without ringing every planet like Saturn
   p.label = makeLabel(p.name, p.dot);
   p.label.classList.add('label-pin');
 });
+SPACE.createLoader(tourTextures.loadingManager);
 
 const cam = SPACE.createOrbitControls(camera, renderer.domElement, {
-  azimuth: 0.9, elevation: 0.35, distance: 12, minDistance: 2, maxDistance: 1600,
-  zoomDistanceScale: 0.06, damping: 0.09, distanceDamping: 0.05
+  azimuth: 0.9,
+  damping: 0.09,
+  distance: 12,
+  distanceDamping: 0.05,
+  elevation: 0.35,
+  maxDistance: 1600,
+  minDistance: 2,
+  zoomDistanceScale: 0.06
 });
 
 // ── stops (Sun + 8 planets) ──
-const BASKETBALL_M = 0.24, SUN_DIA_KM = 1392000;
+const BASKETBALL_M = 0.24;
+const SUN_DIA_KM = 1392000;
 const modelScale = BASKETBALL_M / (SUN_DIA_KM * 1000); // metres per real metre
-function analogyFor(p){
-  const distM = p.au * 1.496e11 * modelScale;            // metres from the basketball Sun
-  const sizeMm = p.dia * 1000 * modelScale * 1000;       // model diameter in mm
-  const distStr = distM < 1000 ? distM.toFixed(distM<100?1:0) + ' m' : (distM/1000).toFixed(2) + ' km';
-  return `If the Sun were a <strong>24&nbsp;cm basketball</strong>, ${p.name} would be ${p.object}
-    (about <strong>${sizeMm.toFixed(1)}&nbsp;mm</strong>) sitting <strong>${distStr}</strong> away.`;
+function analogyFor(p) {
+  const distM = p.au * 1.496e11 * modelScale;
+  const sizeMm = p.dia * 1000 * modelScale * 1000;
+  const distStr = distM < 1000 ? distM.toFixed(distM < 100 ? 1 : 0) + ' m' : (distM / 1000).toFixed(2) + ' km';
+  return 'If the Sun were a <strong>24&nbsp;cm basketball</strong>, ' + p.name + ' would be ' + p.object +
+    ' (about <strong>' + sizeMm.toFixed(1) + '&nbsp;mm</strong>) sitting <strong>' + distStr + '</strong> away.';
 }
-function lightTime(au){
+function lightTime(au) {
   const min = au * 8.317;
   if (min < 60) return min.toFixed(1) + ' minutes';
-  return (min/60).toFixed(1) + ' hours';
+  return (min / 60).toFixed(1) + ' hours';
 }
 
-const STOPS = [{ sun:true }].concat(PLANETS.map(p => ({ p })));
+const STOPS = [{ sun: true }].concat(PLANETS.map(p => ({ p })));
 let idx = 0;
 
 const stopsEl = document.getElementById('stops');
-const sLabel=document.getElementById('s-label'), sTitle=document.getElementById('s-title'), sBody=document.getElementById('s-body');
-const sFacts=document.getElementById('s-facts'), sAnalogy=document.getElementById('s-analogy');
-const metaStop=document.getElementById('meta-stop'), progress=document.getElementById('progress');
-const prevBtn=document.getElementById('prev'), nextBtn=document.getElementById('next');
+const sLabel = document.getElementById('s-label');
+const sTitle = document.getElementById('s-title');
+const sBody = document.getElementById('s-body');
+const sFacts = document.getElementById('s-facts');
+const sAnalogy = document.getElementById('s-analogy');
+const metaStop = document.getElementById('meta-stop');
+const progress = document.getElementById('progress');
+const prevBtn = document.getElementById('prev');
+const nextBtn = document.getElementById('next');
 
-function row(k,v){ return `<div class="fact-row"><span class="fact-key">${k}</span><span class="fact-val">${v}</span></div>`; }
+function row(k, v) {
+  return '<div class="fact-row"><span class="fact-key">' + k + '</span><span class="fact-val">' + v + '</span></div>';
+}
 
-STOPS.forEach((s,i)=>{
-  const b=document.createElement('button'); b.type='button'; b.className='rail-btn';
-  b.setAttribute('aria-pressed','false');
+STOPS.forEach((s, i) => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'rail-btn';
+  b.setAttribute('aria-pressed', 'false');
   const name = s.sun ? 'The Sun' : s.p.name;
   const color = s.sun ? '#f4c560' : s.p.dot;
-  b.innerHTML=`<span class="rail-dot" style="background:${color};color:${color}"></span><span>${name}</span>`;
-  b.onclick=()=>goTo(i);
-  stopsEl.appendChild(b); s.btn=b;
+  b.innerHTML = '<span class="rail-dot" style="background:' + color + ';color:' + color + '"></span><span>' + name + '</span>';
+  b.onclick = () => goTo(i);
+  stopsEl.appendChild(b);
+  s.btn = b;
 });
 
-function render(){
-  const s=STOPS[idx];
-  STOPS.forEach(x=>{
-    const active=x===s;
-    x.btn.classList.toggle('active',active);
-    x.btn.setAttribute('aria-pressed',String(active));
+function render() {
+  const s = STOPS[idx];
+  STOPS.forEach(x => {
+    const active = x === s;
+    x.btn.classList.toggle('active', active);
+    x.btn.setAttribute('aria-pressed', String(active));
   });
-  progress.textContent = `Stop ${idx+1} / ${STOPS.length}`;
-  prevBtn.disabled = idx===0; nextBtn.disabled = idx===STOPS.length-1;
-  if (s.sun){
-    sLabel.textContent='— Start here —'; sTitle.textContent='The Sun'; metaStop.textContent='The Sun';
-    sBody.textContent='Almost everything in the solar system is empty space. To feel just how empty, shrink the whole Sun down to a basketball and walk outward. Press “Travel ›” to visit each planet at its real distance.';
-    sFacts.innerHTML = row('Diameter','1,392,000 km — about 109 Earths across.') + row('Holds','More than 99% of all the mass in the solar system.');
-    sAnalogy.innerHTML = `<span class="fact-tag">✦ Shrink it down</span>Make the Sun a <strong>24&nbsp;cm basketball</strong>. Then Earth is a <strong>peppercorn about 26&nbsp;m away</strong>, and Neptune is a pea nearly <strong>800&nbsp;m away</strong>. That is how empty space really is.`;
+  progress.textContent = 'Stop ' + (idx + 1) + ' / ' + STOPS.length;
+  prevBtn.disabled = idx === 0;
+  nextBtn.disabled = idx === STOPS.length - 1;
+  if (s.sun) {
+    sLabel.textContent = '— Start here —';
+    sTitle.textContent = 'The Sun';
+    metaStop.textContent = 'The Sun';
+    sBody.textContent = 'Almost everything in the solar system is empty space. To feel just how empty, shrink the whole Sun down to a basketball and walk outward. Press “Travel ›” to visit each planet at its real distance.';
+    sFacts.innerHTML = row('Diameter', '1,392,000 km — about 109 Earths across.') + row('Holds', 'More than 99% of all the mass in the solar system.');
+    sAnalogy.innerHTML = '<span class="fact-tag">✦ Shrink it down</span>Make the Sun a <strong>24&nbsp;cm basketball</strong>. Then Earth is a <strong>peppercorn about 26&nbsp;m away</strong>, and Neptune is a pea nearly <strong>800&nbsp;m away</strong>. That is how empty space really is.';
   } else {
-    const p=s.p;
-    sLabel.textContent='— Planet '+String(idx).padStart(2,'0')+' —'; sTitle.textContent=p.name; metaStop.textContent=p.name;
-    sBody.textContent = `We have travelled out to ${p.name}. Look back — the Sun is far behind, and there is a huge amount of empty space between each world.`;
+    const p = s.p;
+    sLabel.textContent = '— Planet ' + String(idx).padStart(2, '0') + ' —';
+    sTitle.textContent = p.name;
+    metaStop.textContent = p.name;
+    sBody.textContent = 'We have travelled out to ' + p.name + '. Look back — the Sun is far behind, and there is a huge amount of empty space between each world.';
     sFacts.innerHTML =
-      row('Distance', (p.au*149.6).toFixed(0) + ' million km (' + p.au.toFixed(2) + ' AU) from the Sun') +
+      row('Distance', (p.au * 149.6).toFixed(0) + ' million km (' + p.au.toFixed(2) + ' AU) from the Sun') +
       row('Light time', 'Sunlight takes ' + lightTime(p.au) + ' to reach here') +
       row('Diameter', p.dia.toLocaleString() + ' km');
-    sAnalogy.innerHTML = `<span class="fact-tag">✦ Basketball Sun</span>` + analogyFor(p);
+    sAnalogy.innerHTML = '<span class="fact-tag">✦ Basketball Sun</span>' + analogyFor(p);
   }
 }
 const _walkTarget = new THREE.Vector3();
-function targetPos(){ const s=STOPS[idx]; return s.sun ? _walkTarget.set(0,0,0) : _walkTarget.copy(s.p.mesh.position); }
-function targetDist(){ const s=STOPS[idx]; return s.sun ? 11 : clamp(s.p.dispR*9, 3, 26); }
-function goTo(i){ idx=clamp(i,0,STOPS.length-1); cam.distanceTarget=targetDist(); render(); }
-prevBtn.onclick=()=>goTo(idx-1); nextBtn.onclick=()=>goTo(idx+1);
-addEventListener('keydown', e => { if(e.key==='ArrowRight')goTo(idx+1); if(e.key==='ArrowLeft')goTo(idx-1); });
+function targetPos() {
+  const s = STOPS[idx];
+  return s.sun ? _walkTarget.set(0, 0, 0) : _walkTarget.copy(s.p.holder.position);
+}
+function targetDist() {
+  const s = STOPS[idx];
+  return s.sun ? 11 : clamp(s.p.dispR * 9, 3, 26);
+}
+function goTo(i) {
+  idx = clamp(i, 0, STOPS.length - 1);
+  cam.distanceTarget = targetDist();
+  render();
+}
+prevBtn.onclick = () => goTo(idx - 1);
+nextBtn.onclick = () => goTo(idx + 1);
+addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') goTo(idx + 1);
+  if (e.key === 'ArrowLeft') goTo(idx - 1);
+});
 
-function place(obj, el){
+function place(obj, el) {
   SPACE.projectToScreen(obj, el, camera, -26, true);
   if (el.style.display !== 'none') el.style.opacity = 0.85;
 }
 
-let lastT=performance.now();
-function animate(){
+let lastT = performance.now();
+function animate() {
   requestAnimationFrame(animate);
-  const now=performance.now();
-  const rawDt=(now-lastT)/1000; lastT=now;
+  const now = performance.now();
+  const rawDt = (now - lastT) / 1000;
+  lastT = now;
   quality.frame(rawDt);
-  const motionNow=SPACE.prefersReducedMotion ? 0 : now;
+  const motionNow = SPACE.prefersReducedMotion ? 0 : now;
   cam.target.lerp(targetPos(), 0.06);
   cam.update();
-  SUN.uniforms.uTime.value = motionNow*0.001;
-  starfield.uniforms.uTime.value = motionNow*0.001;
+  SUN.uniforms.uTime.value = motionNow * 0.001;
+  starfield.uniforms.uTime.value = motionNow * 0.001;
+  if (!SPACE.prefersReducedMotion) {
+    const spin = rawDt * 0.18;
+    PLANETS.forEach(p => { p.mesh.rotation.y += spin; });
+  }
   place(SUN.group, SUN.label);
-  PLANETS.forEach(p=>place(p.mesh, p.label));
+  PLANETS.forEach(p => place(p.holder, p.label));
   setup.render();
 }
 render();
-requestAnimationFrame(()=>{ setTimeout(SPACE.createLoader(null, 0), 250); animate(); });
+animate();
 SPACE.buildNav('scale');
 </script>
 </body>
