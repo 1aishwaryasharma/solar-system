@@ -172,7 +172,6 @@ const clamp = SPACE.clamp;
 // 1. SCENE SETUP
 // ─────────────────────────────────────────────────────────
 const setup = SPACE.createScene({
-  bloom: { strength: 0.6, radius: 0.5, threshold: 0.8 },
   canvasLabel: '3D model of the solar system. Focus it and use the arrow keys to rotate, plus and minus to zoom.',
   far: 4000,
   near: 0.05
@@ -230,7 +229,7 @@ SUN.group.add(sunHit);
 scene.add(SUN.group);
 const sunUniforms = SUN.uniforms;
 
-const sunLight = new THREE.PointLight(0xfff2e0, 2.6, 0, 0);
+const sunLight = new THREE.PointLight(0xfff2e0, 1.6, 0, 0);
 scene.add(sunLight);
 scene.add(new THREE.AmbientLight(0x223355, 0.16));
 

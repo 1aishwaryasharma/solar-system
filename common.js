@@ -506,7 +506,9 @@ float fbm(vec3 p) {
     }
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.1;
+    // Half-float bloom sees pre-tonemap luminance; keep exposure at 1.0 so
+    // lit albedo stays below the bloom floor instead of washing out.
+    renderer.toneMappingExposure = 1.0;
     if (opts.canvasLabel) {
       renderer.domElement.setAttribute('tabindex', '0');
       renderer.domElement.setAttribute('role', 'img');
@@ -524,11 +526,14 @@ float fbm(vec3 p) {
         composer.setSize(window.innerWidth, window.innerHeight);
         composer.addPass(new RenderPass(scene, camera));
         const b = opts.bloom || {};
+        // Half-float composer buffers are HDR; thresholds tuned for the old
+        // byte render targets (~0.8) bloom entire lit planets into white orbs.
+        // Keep the floor high enough that only the Sun (and similar emissives) bloom.
         bloomPass = new UnrealBloomPass(
           new THREE.Vector2(window.innerWidth, window.innerHeight),
-          b.strength != null ? b.strength : 0.6,
-          b.radius != null ? b.radius : 0.5,
-          b.threshold != null ? b.threshold : 0.8
+          b.strength != null ? b.strength : 0.55,
+          b.radius != null ? b.radius : 0.4,
+          b.threshold != null ? b.threshold : 1.35
         );
         composer.addPass(bloomPass);
         // Tone mapping + color space conversion must precede FXAA (sRGB input).
