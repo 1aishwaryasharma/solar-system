@@ -229,7 +229,7 @@ SUN.group.add(sunHit);
 scene.add(SUN.group);
 const sunUniforms = SUN.uniforms;
 
-const sunLight = new THREE.PointLight(0xfff2e0, 1.6, 0, 0);
+const sunLight = new THREE.PointLight(0xfff2e0, 2.6 * Math.PI, 0, 0);
 scene.add(sunLight);
 scene.add(new THREE.AmbientLight(0x223355, 0.16));
 
@@ -690,6 +690,7 @@ function animate() {
   cam.update();
 
   const t = SPACE.prefersReducedMotion ? 0 : sim.visualTime;
+  sunUniforms.uOutputScale.value = setup.bloomPass && setup.bloomPass.enabled ? Math.PI : 1;
   sunUniforms.uTime.value = t;
   starUniforms.uTime.value = t;
   SUN.corona.scale.setScalar(1 + Math.sin(t * 1.5) * 0.015);

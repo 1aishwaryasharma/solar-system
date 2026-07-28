@@ -137,7 +137,7 @@ const starU = starfield.uniforms;
 const ORBIT_R = 9, EARTH_R = 0.85, TILT = DEG(SPACE_DATA.BODIES.earth.tiltDeg);
 const SUN = SPACE.createSun(1.7);
 scene.add(SUN.group);
-const sunLight = new THREE.PointLight(0xfff2e0, 1.5, 0, 0);
+const sunLight = new THREE.PointLight(0xfff2e0, 2.4 * Math.PI, 0, 0);
 scene.add(sunLight);
 scene.add(new THREE.AmbientLight(0x223355, 0.22));
 
@@ -313,6 +313,7 @@ function animate(){
   // Keep a stable, Sun-centred reference frame so only Earth moves around the orbit.
   cam.update();
 
+  SUN.uniforms.uOutputScale.value = setup.bloomPass && setup.bloomPass.enabled ? Math.PI : 1;
   SUN.uniforms.uTime.value = motionTime;
   if (starU) starU.uTime.value = motionTime;
 

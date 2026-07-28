@@ -168,7 +168,10 @@ float fbm(vec3 p) {
   // ── The Sun: turbulent granulating core + two glow shells ──
   function createSun(radius) {
     const group = new THREE.Group();
-    const uniforms = { uTime: { value: 0 } };
+    const uniforms = {
+      uOutputScale: { value: 1 },
+      uTime: { value: 0 }
+    };
     const core = new THREE.Mesh(
       new THREE.SphereGeometry(radius, 64, 64),
       new THREE.ShaderMaterial({
@@ -180,7 +183,7 @@ float fbm(vec3 p) {
             gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
           }`,
         fragmentShader: GLSL_NOISE + `
-          varying vec3 vPos; varying vec3 vN; uniform float uTime;
+          varying vec3 vPos; varying vec3 vN; uniform float uOutputScale; uniform float uTime;
           void main() {
             vec3 p = normalize(vPos);
             float n1 = fbm(p * 3.5 + vec3(uTime * 0.04, uTime * 0.03, -uTime * 0.02));
@@ -193,7 +196,9 @@ float fbm(vec3 p) {
             col = mix(col, hot, smoothstep(0.55, 0.92, v));
             float limb = clamp(dot(normalize(vN), vec3(0.0, 0.0, 1.0)), 0.0, 1.0);
             col *= 0.5 + 0.7 * limb;
-            gl_FragColor = vec4(col * 1.45, 1.0);
+            // Keep this custom emissive shader in the same HDR range as the
+            // r155-migrated direct lights so its hottest regions still bloom.
+            gl_FragColor = vec4(col * 1.45 * uOutputScale, 1.0);
           }`
       })
     );
@@ -506,9 +511,9 @@ float fbm(vec3 p) {
     }
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    // Half-float bloom sees pre-tonemap luminance; keep exposure at 1.0 so
-    // lit albedo stays below the bloom floor instead of washing out.
-    renderer.toneMappingExposure = 1.0;
+    // Preserve the scenes' pre-upgrade exposure. HDR bloom is controlled by
+    // its luminance threshold rather than dimming the entire rendered image.
+    renderer.toneMappingExposure = 1.1;
     if (opts.canvasLabel) {
       renderer.domElement.setAttribute('tabindex', '0');
       renderer.domElement.setAttribute('role', 'img');
@@ -526,14 +531,14 @@ float fbm(vec3 p) {
         composer.setSize(window.innerWidth, window.innerHeight);
         composer.addPass(new RenderPass(scene, camera));
         const b = opts.bloom || {};
-        // Half-float composer buffers are HDR; thresholds tuned for the old
-        // byte render targets (~0.8) bloom entire lit planets into white orbs.
-        // Keep the floor high enough that only the Sun (and similar emissives) bloom.
+        // Half-float composer buffers are HDR. Scale the bloom floor with the
+        // r155 light migration so brighter direct lighting does not turn
+        // reflective planets into white orbs.
         bloomPass = new UnrealBloomPass(
           new THREE.Vector2(window.innerWidth, window.innerHeight),
           b.strength != null ? b.strength : 0.55,
           b.radius != null ? b.radius : 0.4,
-          b.threshold != null ? b.threshold : 1.35
+          b.threshold != null ? b.threshold : 1.35 * Math.PI
         );
         composer.addPass(bloomPass);
         // Tone mapping + color space conversion must precede FXAA (sRGB input).
