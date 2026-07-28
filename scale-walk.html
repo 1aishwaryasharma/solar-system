@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=20260728-6">
+<link rel="stylesheet" href="common.css?v=20260728-7">
 <style>
   .info-panel { top: 104px; width: 350px; }
   .info-title { font-size: 26px; line-height: 1.1; }
@@ -105,7 +105,7 @@
   <div class="analogy" id="s-analogy"></div>
 </aside>
 
-<div class="stops" id="stops" role="tablist" aria-label="Scale walk stops"></div>
+<div class="stops" id="stops" role="group" aria-label="Scale walk stops"></div>
 
 <div class="walk-controls">
   <button type="button" class="walk-btn" id="prev">‹ Back</button>
@@ -124,7 +124,7 @@
 <script src="vendor/three/ShaderPass.js"></script>
 <script src="vendor/three/UnrealBloomPass.js"></script>
 <script src="vendor/three/FXAAShader.js"></script>
-<script src="common.js?v=20260728-6"></script>
+<script src="common.js?v=20260728-7"></script>
 <script>
 'use strict';
 const clamp = SPACE.clamp;
@@ -262,8 +262,7 @@ function row(k,v){ return `<div class="fact-row"><span class="fact-key">${k}</sp
 
 STOPS.forEach((s,i)=>{
   const b=document.createElement('button'); b.type='button'; b.className='stop-btn';
-  b.setAttribute('role','tab');
-  b.setAttribute('aria-selected','false');
+  b.setAttribute('aria-pressed','false');
   const name = s.sun ? 'The Sun' : s.p.name;
   const color = s.sun ? '#f4c560' : s.p.dot;
   b.innerHTML=`<span class="s-dot" style="background:${color}"></span><span>${name}</span>`;
@@ -276,7 +275,7 @@ function render(){
   STOPS.forEach(x=>{
     const active=x===s;
     x.btn.classList.toggle('active',active);
-    x.btn.setAttribute('aria-selected',String(active));
+    x.btn.setAttribute('aria-pressed',String(active));
   });
   progress.textContent = `Stop ${idx+1} / ${STOPS.length}`;
   prevBtn.disabled = idx===0; nextBtn.disabled = idx===STOPS.length-1;

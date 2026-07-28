@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=20260728-6">
+<link rel="stylesheet" href="common.css?v=20260728-7">
 <style>
   /* Shared design tokens & component styles live in common.css.
      Only page-specific rules for the light study remain here. */
@@ -182,24 +182,24 @@
   </div>
 </aside>
 
-<div class="presets" id="presets" role="tablist" aria-label="Observation presets">
-  <button type="button" class="preset-btn active" role="tab" data-preset="free" aria-selected="true">
+<div class="presets" id="presets" role="group" aria-label="Observation presets">
+  <button type="button" class="preset-btn active" data-preset="free" aria-pressed="true">
     <span class="num">01</span>
     <span class="lbl">Free <em>observation</em></span>
   </button>
-  <button type="button" class="preset-btn" role="tab" data-preset="daynight" aria-selected="false">
+  <button type="button" class="preset-btn" data-preset="daynight" aria-pressed="false">
     <span class="num">02</span>
     <span class="lbl">Day &amp; <em>Night</em></span>
   </button>
-  <button type="button" class="preset-btn" role="tab" data-preset="phases" aria-selected="false">
+  <button type="button" class="preset-btn" data-preset="phases" aria-pressed="false">
     <span class="num">03</span>
     <span class="lbl">Lunar <em>Phases</em></span>
   </button>
-  <button type="button" class="preset-btn" role="tab" data-preset="solar" aria-selected="false">
+  <button type="button" class="preset-btn" data-preset="solar" aria-pressed="false">
     <span class="num">04</span>
     <span class="lbl">Solar <em>Eclipse</em></span>
   </button>
-  <button type="button" class="preset-btn" role="tab" data-preset="lunar" aria-selected="false">
+  <button type="button" class="preset-btn" data-preset="lunar" aria-pressed="false">
     <span class="num">05</span>
     <span class="lbl">Lunar <em>Eclipse</em></span>
   </button>
@@ -230,7 +230,7 @@
 <div class="label-3d earth" id="label-earth" aria-hidden="true">Earth</div>
 <div class="label-3d moon" id="label-moon" aria-hidden="true">Moon</div>
 
-<script src="common.js?v=20260728-6"></script>
+<script src="common.js?v=20260728-7"></script>
 <script src="vendor/three/three.min.js"></script>
 <script src="vendor/three/CopyShader.js"></script>
 <script src="vendor/three/LuminosityHighPassShader.js"></script>
@@ -1010,7 +1010,7 @@ function applyPreset(name) {
   presetEls.forEach(el => {
     const active = el.dataset.preset === name;
     el.classList.toggle('active', active);
-    el.setAttribute('aria-selected', String(active));
+    el.setAttribute('aria-pressed', String(active));
   });
   const p = presetData[name];
   infoLabel.textContent = p.label;

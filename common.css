@@ -253,8 +253,9 @@ canvas { display: block; }
   display: none !important;
 }
 
-/* Tablet headers carry the page identity; live telemetry relocates to a
-   compact status strip above the controls dock so phones still see events. */
+/* Tablet headers carry the page identity; on interactive scenes with a
+   bottom dock, live telemetry relocates to a compact status strip above it.
+   Scrolling pages like Missions keep metadata in the header. */
 @media (max-width: 1024px) {
   .header {
     padding: calc(16px + env(safe-area-inset-top, 0px))
@@ -269,7 +270,9 @@ canvas { display: block; }
   .subtitle {
     display: none !important;
   }
-  .header-meta {
+  body:has(.controls) .header-meta,
+  body:has(.date-controls) .header-meta,
+  body:has(.walk-controls) .header-meta {
     display: flex !important;
     position: fixed;
     bottom: calc(64px + env(safe-area-inset-bottom, 0px));
@@ -455,7 +458,9 @@ canvas { display: block; }
   .speed-group { gap: 8px; }
   .speed-value { min-width: 40px; }
 
-  .header-meta {
+  body:has(.controls) .header-meta,
+  body:has(.date-controls) .header-meta,
+  body:has(.walk-controls) .header-meta {
     bottom: calc(58px + env(safe-area-inset-bottom, 0px));
     left: calc(12px + env(safe-area-inset-left, 0px));
     right: calc(12px + env(safe-area-inset-right, 0px));

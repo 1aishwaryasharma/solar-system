@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=20260728-6">
+<link rel="stylesheet" href="common.css?v=20260728-7">
 <style>
   .info-panel { top: 104px; width: 340px; }
   .info-title { font-size: 26px; line-height: 1.1; }
@@ -111,7 +111,7 @@
   </div>
 </aside>
 
-<div class="seasons-picker" id="picker" role="tablist" aria-label="Seasons"></div>
+<div class="seasons-picker" id="picker" role="group" aria-label="Seasons"></div>
 
 <div class="controls">
   <button type="button" class="play-btn" id="play-btn" aria-label="Pause simulation">
@@ -139,7 +139,7 @@
 <script src="vendor/three/ShaderPass.js"></script>
 <script src="vendor/three/UnrealBloomPass.js"></script>
 <script src="vendor/three/FXAAShader.js"></script>
-<script src="common.js?v=20260728-6"></script>
+<script src="common.js?v=20260728-7"></script>
 <script>
 'use strict';
 const clamp = SPACE.clamp;
@@ -316,8 +316,7 @@ updatePlayButton();
 const picker=document.getElementById('picker');
 MARKERS.forEach(m=>{
   const b=document.createElement('button'); b.type='button'; b.className='season-btn';
-  b.setAttribute('role','tab');
-  b.setAttribute('aria-selected','false');
+  b.setAttribute('aria-pressed','false');
   b.innerHTML=`<span class="s-dot" style="background:${m.dot}"></span><span>${m.name}</span>`;
   b.onclick=()=>{ state.theta=m.deg; slider.value=m.deg; state.playing=false; updatePlayButton(); };
   picker.appendChild(b); m.btn=b;
@@ -417,7 +416,7 @@ function animate(){
     if (m.__wasActive !== active) {
       m.__wasActive = active;
       m.btn.classList.toggle('active',active);
-      m.btn.setAttribute('aria-selected',String(active));
+      m.btn.setAttribute('aria-pressed',String(active));
     }
   });
 

@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=20260728-6">
+<link rel="stylesheet" href="common.css?v=20260728-7">
 <style>
   /* ── Page-specific styling for the grand tour ── */
   .info-panel { top: 132px; width: 330px; }
@@ -179,7 +179,7 @@
   </div>
 </aside>
 
-<div class="bodies" id="bodies" role="tablist" aria-label="Bodies"></div>
+<div class="bodies" id="bodies" role="group" aria-label="Bodies"></div>
 
 <div class="controls">
   <button type="button" class="play-btn" id="play-btn" aria-label="Pause simulation">
@@ -231,7 +231,7 @@
 <script src="vendor/three/RenderPass.js"></script>
 <script src="vendor/three/ShaderPass.js"></script>
 <script src="vendor/three/UnrealBloomPass.js"></script>
-<script src="common.js?v=20260728-6"></script>
+<script src="common.js?v=20260728-7"></script>
 <script>
 'use strict';
 const clamp = SPACE.clamp;
@@ -857,8 +857,7 @@ function addButton(info) {
   const btn = document.createElement('button');
   btn.type = 'button';
   btn.className = 'body-btn'; btn.dataset.key = info.key;
-  btn.setAttribute('role', 'tab');
-  btn.setAttribute('aria-selected', 'false');
+  btn.setAttribute('aria-pressed', 'false');
   btn.innerHTML = `<span class="body-dot" style="background:${info.dot}; color:${info.dot}"></span><span>${info.name}</span><span class="num">${info.num}</span>`;
   btn.addEventListener('click', () => selectBody(info.key));
   bodiesEl.appendChild(btn);
@@ -877,8 +876,7 @@ function addLabel(info) {
 const overviewBtn = document.createElement('button');
 overviewBtn.type = 'button';
 overviewBtn.className = 'body-btn active'; overviewBtn.dataset.key = 'overview';
-overviewBtn.setAttribute('role', 'tab');
-overviewBtn.setAttribute('aria-selected', 'true');
+overviewBtn.setAttribute('aria-pressed', 'true');
 overviewBtn.innerHTML = `<span class="body-dot" style="background:#8893a8;color:#8893a8"></span><span>Whole family</span><span class="num">◎</span>`;
 overviewBtn.addEventListener('click', () => selectBody(null));
 bodiesEl.appendChild(overviewBtn);
@@ -921,12 +919,12 @@ function renderOverview() {
 function setActiveButton(key) {
   Object.values(bodyButtons).forEach(b => {
     b.classList.remove('active');
-    b.setAttribute('aria-selected', 'false');
+    b.setAttribute('aria-pressed', 'false');
   });
   const b = bodyButtons[key || 'overview'];
   if (b) {
     b.classList.add('active');
-    b.setAttribute('aria-selected', 'true');
+    b.setAttribute('aria-pressed', 'true');
   }
 }
 function infoByKey(key) {
