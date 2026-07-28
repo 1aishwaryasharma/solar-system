@@ -226,13 +226,78 @@ canvas { display: block; }
 .scene-menu a.current { color: var(--accent); }
 .scene-menu a .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.5; }
 .scene-menu a.current .dot { opacity: 1; }
+
+/* Tablet headers carry only the page identity. Live scene metadata remains
+   available through the controls and educational panel below. */
+@media (max-width: 1024px) {
+  .header {
+    padding: 16px 18px !important;
+  }
+  .title {
+    font-size: 18px !important;
+    max-width: calc(100vw - 164px);
+  }
+  .subtitle,
+  .header-meta,
+  .nav-link,
+  .back-link {
+    display: none !important;
+  }
+
+  .controls,
+  .date-controls {
+    right: 16px !important;
+    left: 16px !important;
+    width: auto !important;
+    max-width: none !important;
+    transform: none !important;
+    flex-wrap: nowrap !important;
+    justify-content: center !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+  .controls::-webkit-scrollbar,
+  .date-controls::-webkit-scrollbar {
+    display: none;
+  }
+  .controls > *,
+  .date-controls > * {
+    flex: 0 0 auto;
+  }
+  .controls .speed-group,
+  .controls .toggle-group {
+    flex-wrap: nowrap;
+  }
+}
+
 @media (max-width: 820px) {
-  .scene-nav { top: 12px; }
+  .header {
+    padding: 12px 14px !important;
+  }
+  .title {
+    font-size: 16px !important;
+    max-width: calc(100vw - 132px);
+  }
+  .scene-nav {
+    top: 12px;
+    left: auto;
+    right: 12px;
+    transform: none;
+  }
   .scene-nav-btn { padding: 6px 10px; font-size: 8px; }
 
   /* Keep the scene visible on phones. Educational copy becomes a small
      title drawer and is available on demand instead of covering the model. */
   .info-panel.mobile-info-panel {
+    top: auto !important;
+    right: 12px !important;
+    bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+    left: 12px !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: min(52dvh, calc(100dvh - 168px)) !important;
     padding: 12px 64px 12px 16px;
     overflow: auto;
     transition: max-height 0.25s ease, padding 0.25s ease;
@@ -285,6 +350,61 @@ canvas { display: block; }
     top: 12px;
     transform: none;
   }
+
+  /* A single, horizontally scrollable dock keeps controls in one stable row.
+     Secondary actions remain reachable by swiping instead of causing reflow. */
+  .controls,
+  .date-controls {
+    right: 12px !important;
+    bottom: calc(10px + env(safe-area-inset-bottom)) !important;
+    left: 12px !important;
+    width: auto !important;
+    max-width: none !important;
+    transform: none !important;
+    flex-wrap: nowrap !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+    padding: 9px 10px !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+  .controls::-webkit-scrollbar,
+  .date-controls::-webkit-scrollbar {
+    display: none;
+  }
+  .controls > *,
+  .date-controls > * {
+    flex: 0 0 auto;
+  }
+  .controls .speed-group,
+  .controls .toggle-group {
+    flex-wrap: nowrap;
+  }
+  .controls .speed-label,
+  .date-controls .date-label {
+    display: none;
+  }
+  .controls .divider {
+    display: block !important;
+    flex: 0 0 1px;
+  }
+  .play-btn {
+    width: 34px;
+    height: 34px;
+  }
+  .speed-group { gap: 8px; }
+  .speed-value { min-width: 40px; }
+
+  .walk-controls {
+    bottom: calc(10px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .scale-note,
+  .stage {
+    bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+  }
 }
 
 @media (max-height: 520px) and (orientation: landscape) {
@@ -311,6 +431,18 @@ canvas { display: block; }
   .toggle-group { gap: 4px; flex-wrap: nowrap; }
   .toggle-btn { padding: 5px 7px; font-size: 7px; }
   .scene-nav { top: 8px; }
+  .info-panel.mobile-info-panel {
+    top: 56px !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: 12px !important;
+    width: min(320px, calc(100vw - 180px)) !important;
+    max-height: calc(100dvh - 120px) !important;
+  }
+  .scale-note,
+  .stage {
+    bottom: calc(64px + env(safe-area-inset-bottom)) !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

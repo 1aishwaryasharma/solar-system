@@ -89,6 +89,14 @@ test("interactive info panels use the shared mobile drawer", () => {
   expect(commonCss).toContain(".info-panel.mobile-info-panel:not(.is-expanded)");
 });
 
+test("small-screen chrome stays compact and controls do not reflow", () => {
+  const commonCss = readFileSync("common.css", "utf8");
+  expect(commonCss).toContain("@media (max-width: 1024px)");
+  expect(commonCss).toMatch(/\.subtitle,\s*\.header-meta,[\s\S]*?display:\s*none\s*!important/);
+  expect(commonCss).toMatch(/\.controls,[\s\S]*?flex-wrap:\s*nowrap\s*!important/);
+  expect(commonCss).toContain("overflow-x: auto");
+});
+
 test("current mission figures remain current", () => {
   const missions = readFileSync("missions.html", "utf8");
   expect(missions).toContain("about <b>24 hours</b>");
