@@ -210,7 +210,7 @@ sunGroup.position.set(-SUN_DISTANCE, 0, 0);
 scene.add(sunGroup);
 
 // directional light from the sun (parallel rays — realistic for distant star)
-const sunLight = new THREE.DirectionalLight(0xffeacc, 2.2);
+const sunLight = new THREE.DirectionalLight(0xffeacc, 2.2 * Math.PI);
 sunLight.position.copy(sunGroup.position);
 sunLight.target.position.set(0, 0, 0);
 sunLight.castShadow = true;

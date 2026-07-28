@@ -135,11 +135,12 @@ test('WebGL scenes preserve their pre-upgrade lighting levels', () => {
   const seasons = readFileSync('seasons.html', 'utf8');
   const solarSystem = readFileSync('solar-system.html', 'utf8');
 
+  expect(common).toContain('b.threshold != null ? b.threshold : 1.35 * Math.PI');
   expect(common).toContain('renderer.toneMappingExposure = 1.1');
-  expect(index).toContain('new THREE.DirectionalLight(0xffeacc, 2.2)');
-  expect(scaleWalk).toContain('new THREE.PointLight(0xfff2e0, 2.6, 0, 0)');
-  expect(seasons).toContain('new THREE.PointLight(0xfff2e0, 2.4, 0, 0)');
-  expect(solarSystem).toContain('new THREE.PointLight(0xfff2e0, 2.6, 0, 0)');
+  expect(index).toContain('new THREE.DirectionalLight(0xffeacc, 2.2 * Math.PI)');
+  expect(scaleWalk).toContain('new THREE.PointLight(0xfff2e0, 2.6 * Math.PI, 0, 0)');
+  expect(seasons).toContain('new THREE.PointLight(0xfff2e0, 2.4 * Math.PI, 0, 0)');
+  expect(solarSystem).toContain('new THREE.PointLight(0xfff2e0, 2.6 * Math.PI, 0, 0)');
 });
 
 test("interactive info panels use the shared mobile drawer", () => {

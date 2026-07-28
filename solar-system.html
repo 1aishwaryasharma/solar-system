@@ -229,7 +229,7 @@ SUN.group.add(sunHit);
 scene.add(SUN.group);
 const sunUniforms = SUN.uniforms;
 
-const sunLight = new THREE.PointLight(0xfff2e0, 2.6, 0, 0);
+const sunLight = new THREE.PointLight(0xfff2e0, 2.6 * Math.PI, 0, 0);
 scene.add(sunLight);
 scene.add(new THREE.AmbientLight(0x223355, 0.16));
 

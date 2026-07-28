@@ -526,14 +526,14 @@ float fbm(vec3 p) {
         composer.setSize(window.innerWidth, window.innerHeight);
         composer.addPass(new RenderPass(scene, camera));
         const b = opts.bloom || {};
-        // Half-float composer buffers are HDR; thresholds tuned for the old
-        // byte render targets (~0.8) bloom entire lit planets into white orbs.
-        // Keep the floor high enough that only the Sun (and similar emissives) bloom.
+        // Half-float composer buffers are HDR. Scale the bloom floor with the
+        // r155 light migration so brighter direct lighting does not turn
+        // reflective planets into white orbs.
         bloomPass = new UnrealBloomPass(
           new THREE.Vector2(window.innerWidth, window.innerHeight),
           b.strength != null ? b.strength : 0.55,
           b.radius != null ? b.radius : 0.4,
-          b.threshold != null ? b.threshold : 1.35
+          b.threshold != null ? b.threshold : 1.35 * Math.PI
         );
         composer.addPass(bloomPass);
         // Tone mapping + color space conversion must precede FXAA (sRGB input).
