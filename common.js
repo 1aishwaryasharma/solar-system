@@ -312,8 +312,10 @@ float fbm(vec3 p) {
       Math.min(basePR, 1)
     ];
     const SHADOW_STEPS = [2048, 2048, 1024, 512];
-    // Ignore gaps larger than this — typically tab suspension, not a slow frame.
-    const MAX_SAMPLE_S = 0.1;
+    // Ignore gaps larger than this — typically tab suspension / resume,
+    // not sustained slow rendering. Keep high enough that ~10 FPS devices
+    // (dt ≈ 0.1s) still feed the EMA and can degrade quality.
+    const MAX_SAMPLE_S = 1;
     // Upgrade needs to be reachable on 60 Hz displays (~16.7 ms vsync).
     const UPGRADE_MS = 18;
     const DOWNGRADE_MS = 24;
