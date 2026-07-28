@@ -1100,8 +1100,10 @@ function animate() {
     sim.moonNodeLongitude += dt * sim.speed * sim.nodePrecessionSpeed;
   }
 
-  // Earth rotates eastward: counter-clockwise when viewed above the north pole.
-  earth.rotation.y = sim.time * sim.earthSpinSpeed;
+  // Earth rotates eastward (CCW from above the north pole). Three.js +rotation.y
+  // is CCW when looking along +Y (from the south) — i.e. westward from above —
+  // so prograde spin must be negative.
+  earth.rotation.y = -sim.time * sim.earthSpinSpeed;
 
   // The Sun's apparent annual path in this explicitly Earth-centered frame.
   sunGroup.position.set(
