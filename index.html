@@ -167,7 +167,7 @@ import { SPACE_DATA } from './data.js';
 // 1. SCENE SETUP
 // ─────────────────────────────────────────────────────────
 const setup = SPACE.createScene({
-  bloom: { strength: 0.55, radius: 0.45, threshold: 0.82 },
+  bloom: { radius: 0.35, strength: 0.45, threshold: 1.4 },
   canvasLabel: '3D model of the Sun, Earth, and Moon. Focus it and use the arrow keys to rotate, plus and minus to zoom.',
   shadowMap: true
 });
@@ -211,7 +211,7 @@ sunGroup.position.set(-SUN_DISTANCE, 0, 0);
 scene.add(sunGroup);
 
 // directional light from the sun (parallel rays — realistic for distant star)
-const sunLight = new THREE.DirectionalLight(0xffeacc, 2.2);
+const sunLight = new THREE.DirectionalLight(0xffeacc, 1.35);
 sunLight.position.copy(sunGroup.position);
 sunLight.target.position.set(0, 0, 0);
 sunLight.castShadow = true;
@@ -357,7 +357,7 @@ const earthMaterial = new THREE.MeshPhongMaterial({
   normalScale: new THREE.Vector2(0.55, 0.55),
   specularMap: earthSpecularTexture,
   specular: new THREE.Color(0x596779),
-  shininess: 24
+  shininess: 14
 });
 earthMaterial.onBeforeCompile = (shader) => {
   shader.uniforms.nightMap = earthNightUniforms.nightMap;
