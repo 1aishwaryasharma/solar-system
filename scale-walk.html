@@ -150,14 +150,28 @@ scene.add(starfield.points);
 
 const AU = 40; // display units per AU (distances are honest, sizes gently enlarged)
 const PLANETS = [
-  { name:'Mercury', au:0.387, radiusKm:2440, dia:4879,   dot:'#b9b2a6', object:'a grain of salt' },
-  { name:'Venus',   au:0.723, radiusKm:6052, dia:12104,  dot:'#e8cd8a', object:'a peppercorn' },
-  { name:'Earth',   au:1.000, radiusKm:6371, dia:12742,  dot:'#6ab0ff', object:'a peppercorn' },
-  { name:'Mars',    au:1.524, radiusKm:3390, dia:6779,   dot:'#d0674a', object:'a pinhead' },
-  { name:'Jupiter', au:5.203, radiusKm:69911,dia:139820, dot:'#d9b48a', object:'a walnut' },
-  { name:'Saturn',  au:9.537, radiusKm:58232,dia:116460, dot:'#e6d3a0', object:'a large marble' },
-  { name:'Uranus',  au:19.19, radiusKm:25362,dia:50724,  dot:'#a9e0e2', object:'a pea' },
-  { name:'Neptune', au:30.07, radiusKm:24622,dia:49244,  dot:'#3f6fd8', object:'a pea' }
+  { key:'mercury', name:'Mercury', au:0.387, radiusKm:2440, dia:4879,   dot:'#b9b2a6', object:'a grain of salt',
+    type:'rock', base:'#8f8880', accent:'#6a635b', tiltDeg:0.03 },
+  { key:'venus',   name:'Venus',   au:0.723, radiusKm:6052, dia:12104,  dot:'#e8cd8a', object:'a peppercorn',
+    type:'venus', base:'#d9b978', accent:'#b98f4a', tiltDeg:177.4 },
+  { key:'earth',   name:'Earth',   au:1.000, radiusKm:6371, dia:12742,  dot:'#6ab0ff', object:'a peppercorn',
+    type:'earth', base:'#123a63', accent:'#3d5a3a', tiltDeg:23.44 },
+  { key:'mars',    name:'Mars',    au:1.524, radiusKm:3390, dia:6779,   dot:'#d0674a', object:'a pinhead',
+    type:'rock', base:'#b8532f', accent:'#7d3a22', tiltDeg:25.19 },
+  { key:'jupiter', name:'Jupiter', au:5.203, radiusKm:69911,dia:139820, dot:'#d9b48a', object:'a walnut',
+    type:'gas', base:'#c9a06b', tiltDeg:3.13,
+    bands:['#c9a06b','#ddc196','#a9713f','#e8d6b0','#93613c','#d0aa78'],
+    spot:{ x:0.62, y:0.60, rx:0.09, ry:0.05, color:'#b5573a' } },
+  { key:'saturn',  name:'Saturn',  au:9.537, radiusKm:58232,dia:116460, dot:'#e6d3a0', object:'a large marble',
+    type:'gas', base:'#d8c69a', rings:true, tiltDeg:26.73,
+    bands:['#d8c69a','#e9dbb8','#c9b184','#efe3c6','#cbb98d','#e2d3aa'] },
+  { key:'uranus',  name:'Uranus',  au:19.19, radiusKm:25362,dia:50724,  dot:'#a9e0e2', object:'a pea',
+    type:'ice', base:'#a9d8e0', tiltDeg:97.77,
+    bands:['#a9d8e0','#bfe4ea','#98cdd6','#b6e0e6'] },
+  { key:'neptune', name:'Neptune', au:30.07, radiusKm:24622,dia:49244,  dot:'#3f6fd8', object:'a pea',
+    type:'ice', base:'#3b6fd0', tiltDeg:28.32,
+    bands:['#3b6fd0','#4f80dc','#3160b8','#5a8ae0'],
+    spot:{ x:0.40, y:0.44, rx:0.06, ry:0.045, color:'#20407e' } }
 ];
 
 // Sun at origin
@@ -165,6 +179,118 @@ const SUN = SPACE.createSun(3.2);
 scene.add(SUN.group);
 scene.add(new THREE.PointLight(0xfff2e0, 2.6, 0, 0));
 scene.add(new THREE.AmbientLight(0x334466, 0.35));
+
+// ── planet looks (same procedural maps as Grand Tour; Earth uses the day map) ──
+function seededRandom(seed) {
+  let s = seed >>> 0;
+  return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+}
+function hexToRgb(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`;
+}
+function finishTexture(canvas) {
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.encoding = THREE.sRGBEncoding;
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.ClampToEdgeWrapping;
+  tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  return tex;
+}
+function makeBandedTexture(p, W, H) {
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  const rand = seededRandom(p.name.length * 9173 + p.radiusKm);
+  const bands = p.bands, rows = 26;
+  for (let i = 0; i < rows; i++) {
+    const y0 = (i / rows) * H, y1 = ((i + 1) / rows) * H;
+    ctx.fillStyle = bands[Math.floor(rand() * bands.length)];
+    ctx.fillRect(0, y0, W, y1 - y0 + 1);
+  }
+  for (let i = 0; i < 900; i++) {
+    const y = rand() * H, h = 2 + rand() * 10;
+    ctx.globalAlpha = 0.05 + rand() * 0.12;
+    ctx.fillStyle = bands[Math.floor(rand() * bands.length)];
+    ctx.fillRect(0, y, W, h);
+  }
+  ctx.globalAlpha = 1;
+  if (p.spot) {
+    const s = p.spot;
+    ctx.save(); ctx.translate(s.x * W, s.y * H); ctx.scale(1, (s.ry * H) / (s.rx * W));
+    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, s.rx * W);
+    g.addColorStop(0, s.color); g.addColorStop(0.6, s.color + 'cc'); g.addColorStop(1, s.color + '00');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, s.rx * W, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+  }
+  return finishTexture(c);
+}
+function makeRockTexture(p, W, H) {
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  const rand = seededRandom(p.name.length * 4441 + p.radiusKm);
+  ctx.fillStyle = p.base; ctx.fillRect(0, 0, W, H);
+  for (let i = 0; i < 1400; i++) {
+    const x = rand() * W, y = rand() * H, r = 4 + rand() * 40;
+    const light = rand() < 0.5;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    const col = light ? '255,255,255' : hexToRgb(p.accent);
+    g.addColorStop(0, `rgba(${col},${0.05 + rand() * 0.10})`); g.addColorStop(1, `rgba(${col},0)`);
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  }
+  if (p.key === 'mars') {
+    ctx.fillStyle = 'rgba(235,240,245,0.85)';
+    ctx.beginPath(); ctx.ellipse(W / 2, 8, W * 0.30, 26, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(W / 2, H - 8, W * 0.24, 22, 0, 0, Math.PI * 2); ctx.fill();
+  }
+  return finishTexture(c);
+}
+function makeVenusTexture(p, W, H) {
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  const rand = seededRandom(7788);
+  ctx.fillStyle = p.base; ctx.fillRect(0, 0, W, H);
+  for (let i = 0; i < 1200; i++) {
+    const y = rand() * H, h = 6 + rand() * 26;
+    ctx.globalAlpha = 0.04 + rand() * 0.08;
+    ctx.fillStyle = rand() < 0.5 ? '#f0dca8' : p.accent;
+    ctx.beginPath(); ctx.ellipse(rand() * W, y, 60 + rand() * 200, h, 0, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  return finishTexture(c);
+}
+function makeRingTexture() {
+  const W = 512, H = 16;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  const rand = seededRandom(2024);
+  for (let x = 0; x < W; x++) {
+    const t = x / W;
+    let a = 0.55 + 0.35 * Math.sin(t * 40) * 0.4;
+    if (t > 0.62 && t < 0.68) a *= 0.15;
+    if (t < 0.06 || t > 0.98) a *= 0.2;
+    a = clamp(a + (rand() - 0.5) * 0.15, 0, 0.85);
+    const shade = 200 + Math.floor(rand() * 40);
+    ctx.fillStyle = `rgba(${shade},${shade - 20},${shade - 60},${a})`;
+    ctx.fillRect(x, 0, 1, H);
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.encoding = THREE.sRGBEncoding;
+  return tex;
+}
+const textureLoader = new THREE.TextureLoader();
+function planetTexture(p) {
+  const W = 1024, H = 512;
+  if (p.type === 'earth') {
+    const tex = textureLoader.load('assets/earth/day.jpg');
+    tex.encoding = THREE.sRGBEncoding;
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    return tex;
+  }
+  if (p.type === 'gas' || p.type === 'ice') return makeBandedTexture(p, W, H);
+  if (p.type === 'venus') return makeVenusTexture(p, W, H);
+  return makeRockTexture(p, W, H);
+}
 
 // the path line along +X
 const pathEnd = PLANETS[PLANETS.length-1].au * AU;
@@ -182,13 +308,39 @@ function makeLabel(text, color){
 }
 SUN.label = makeLabel('The Sun', '#f4c560');
 
+const unitSphere = new THREE.SphereGeometry(1, 48, 48);
 PLANETS.forEach(p => {
   p.x = p.au * AU;
   p.dispR = clamp(0.5 * Math.sqrt(p.radiusKm/6371), 0.22, 1.7);
-  const mesh = new THREE.Mesh(new THREE.SphereGeometry(p.dispR, 48, 48),
-    new THREE.MeshStandardMaterial({ color: p.dot, roughness: 1, metalness: 0, emissive: new THREE.Color(p.dot).multiplyScalar(0.04) }));
-  mesh.position.set(p.x, 0, 0);
-  scene.add(mesh); p.mesh = mesh;
+
+  p.holder = new THREE.Group();
+  p.holder.position.set(p.x, 0, 0);
+  scene.add(p.holder);
+
+  p.tilt = new THREE.Group();
+  p.tilt.rotation.z = THREE.MathUtils.degToRad(p.tiltDeg);
+  p.holder.add(p.tilt);
+
+  const mesh = new THREE.Mesh(unitSphere,
+    new THREE.MeshStandardMaterial({ map: planetTexture(p), roughness: 1, metalness: 0 }));
+  mesh.scale.setScalar(p.dispR);
+  p.tilt.add(mesh);
+  p.mesh = mesh;
+
+  if (p.rings) {
+    const inner = p.dispR * 1.35, outer = p.dispR * 2.30;
+    const ringGeo = new THREE.RingGeometry(inner, outer, 96);
+    const pos = ringGeo.attributes.position, uv = ringGeo.attributes.uv, v3 = new THREE.Vector3();
+    for (let k = 0; k < pos.count; k++) {
+      v3.fromBufferAttribute(pos, k);
+      uv.setXY(k, (v3.length() - inner) / (outer - inner), 0.5);
+    }
+    const ringMesh = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({
+      map: makeRingTexture(), side: THREE.DoubleSide, transparent: true, opacity: 0.9, depthWrite: false }));
+    ringMesh.rotation.x = Math.PI / 2;
+    p.tilt.add(ringMesh);
+  }
+
   // the floating label doubles as the findability marker: a pin/caret that
   // points down at the planet (see .label-pin) — so far specks stay locatable
   // without ringing every planet like Saturn
@@ -296,9 +448,28 @@ function render(){
   }
 }
 const _walkTarget = new THREE.Vector3();
-function targetPos(){ const s=STOPS[idx]; return s.sun ? _walkTarget.set(0,0,0) : _walkTarget.copy(s.p.mesh.position); }
-function targetDist(){ const s=STOPS[idx]; return s.sun ? 11 : clamp(s.p.dispR*9, 3, 26); }
-function goTo(i){ idx=clamp(i,0,STOPS.length-1); cam.distanceTarget=targetDist(); render(); }
+function targetPos(){ const s=STOPS[idx]; return s.sun ? _walkTarget.set(0,0,0) : _walkTarget.copy(s.p.holder.position); }
+function targetDist(){
+  const s=STOPS[idx];
+  if (s.sun) return 11;
+  // give Saturn a little more room so the rings stay in frame
+  const pad = s.p.rings ? 12 : 9;
+  return clamp(s.p.dispR * pad, 3, 26);
+}
+function goTo(i){
+  idx=clamp(i,0,STOPS.length-1);
+  cam.distanceTarget=targetDist();
+  // Prefer a sunward three-quarter view so surface maps read as the real worlds,
+  // not a black silhouette against the distant Sun.
+  if (STOPS[idx].sun) {
+    cam.azimuthTarget = 0.9;
+    cam.elevationTarget = 0.35;
+  } else {
+    cam.azimuthTarget = -0.85;
+    cam.elevationTarget = 0.28;
+  }
+  render();
+}
 prevBtn.onclick=()=>goTo(idx-1); nextBtn.onclick=()=>goTo(idx+1);
 addEventListener('keydown', e => { if(e.key==='ArrowRight')goTo(idx+1); if(e.key==='ArrowLeft')goTo(idx-1); });
 
@@ -322,8 +493,12 @@ function animate(){
   cam.update();
   SUN.uniforms.uTime.value = motionNow*0.001;
   starfield.uniforms.uTime.value = motionNow*0.001;
+  if (!SPACE.prefersReducedMotion) {
+    const spin = rawDt * 0.18;
+    PLANETS.forEach(p => { p.mesh.rotation.y += spin; });
+  }
   place(SUN.group, SUN.label);
-  PLANETS.forEach(p=>place(p.mesh, p.label));
+  PLANETS.forEach(p=>place(p.holder, p.label));
   if (composer) composer.render(); else renderer.render(scene,camera);
 }
 render();
