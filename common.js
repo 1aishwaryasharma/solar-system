@@ -193,7 +193,9 @@ float fbm(vec3 p) {
             col = mix(col, hot, smoothstep(0.55, 0.92, v));
             float limb = clamp(dot(normalize(vN), vec3(0.0, 0.0, 1.0)), 0.0, 1.0);
             col *= 0.5 + 0.7 * limb;
-            gl_FragColor = vec4(col * 1.45, 1.0);
+            // Keep this custom emissive shader in the same HDR range as the
+            // r155-migrated direct lights so its hottest regions still bloom.
+            gl_FragColor = vec4(col * 1.45 * 3.14159265, 1.0);
           }`
       })
     );
