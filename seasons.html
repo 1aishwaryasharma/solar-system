@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=20260728-6">
+<link rel="stylesheet" href="common.css?v=20260728-7">
 <style>
   .info-panel { top: 104px; width: 340px; }
   .info-title { font-size: 26px; line-height: 1.1; }
@@ -65,15 +65,9 @@
   .season-btn .s-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
   .season-btn em { font-style: italic; color: var(--accent-warm); }
   @media (max-width: 820px) {
-    .info-panel {
-      top: auto; bottom: 200px; left: 16px; right: 16px; width: auto;
-      max-height: min(42vh, calc(100vh - 426px)); overflow: auto;
-    }
     .info-title { font-size: 20px; }
     .seasons-picker { top: 64px; right: 12px; transform: none; }
     .season-btn { width: 150px; padding: 8px 10px; font-size: 11px; }
-    .controls { bottom: 14px; padding: 10px 12px; gap: 10px; flex-wrap: wrap; justify-content: center; }
-    .hint { display: none; } .divider { display: none; }
   }
   @media (max-height: 520px) and (orientation: landscape) {
     .seasons-picker { top: 64px; right: 16px; transform: none; }
@@ -83,8 +77,13 @@
 </head>
 <body>
 
-<div id="canvas-container"></div>
+<main id="canvas-container" aria-label="3D model of Earth orbiting the Sun through the seasons"></main>
 <div class="loader" id="loader" role="status" aria-live="polite"><div class="loader-text">Tilting the Earth…</div></div>
+<noscript>
+  <div class="loader" role="alert" style="z-index:101">
+    <div class="loader-text" style="animation:none">JavaScript is required to explore this page.</div>
+  </div>
+</noscript>
 
 <header class="header">
   <div>
@@ -112,7 +111,7 @@
   </div>
 </aside>
 
-<div class="seasons-picker" id="picker"></div>
+<div class="seasons-picker" id="picker" role="group" aria-label="Seasons"></div>
 
 <div class="controls">
   <button type="button" class="play-btn" id="play-btn" aria-label="Pause simulation">
@@ -140,7 +139,7 @@
 <script src="vendor/three/ShaderPass.js"></script>
 <script src="vendor/three/UnrealBloomPass.js"></script>
 <script src="vendor/three/FXAAShader.js"></script>
-<script src="common.js?v=20260728-6"></script>
+<script src="common.js?v=20260728-7"></script>
 <script>
 'use strict';
 const clamp = SPACE.clamp;
@@ -152,7 +151,8 @@ scene.background = new THREE.Color(0x050810);
 const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 3000);
 // FXAA in the composer chain handles AA; MSAA on the default framebuffer is
 // wasted because the scene renders into offscreen targets.
-const renderer = new THREE.WebGLRenderer({ antialias: false });
+const renderer = SPACE.createRenderer({ antialias: false });
+if (!renderer) throw new Error('WebGL unavailable');
 renderer.domElement.setAttribute('tabindex', '0');
 renderer.domElement.setAttribute('role', 'img');
 renderer.domElement.setAttribute('aria-label', '3D model of Earth orbiting the Sun through the seasons. Focus it and use the arrow keys to rotate, plus and minus to zoom.');
@@ -359,7 +359,8 @@ function animate(){
 
   // Earth position + fixed-in-space tilt; spin for day/night
   earthPivot.position.set(Math.cos(a)*ORBIT_R, 0, Math.sin(a)*ORBIT_R);
-  earth.rotation.y = motionTime*0.6; // steady visible spin (day/night)
+  // Negate Y spin: Three.js +Y is westward when viewed from above the north pole.
+  earth.rotation.y = -motionTime*0.6; // steady visible eastward spin (day/night)
 
   // sunlight rays from Sun toward Earth's lit side
   _sunDir.copy(earthPivot.position).multiplyScalar(-1).normalize();

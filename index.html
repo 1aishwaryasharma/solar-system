@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=20260728-6">
+<link rel="stylesheet" href="common.css?v=20260728-7">
 <style>
   /* Shared design tokens & component styles live in common.css.
      Only page-specific rules for the light study remain here. */
@@ -110,10 +110,7 @@
   .label-3d.moon { color: #c9c5b8; border-color: rgba(201, 197, 184, 0.3); }
 
   /* ──── Mobile ──── */
-  @media (max-width: 768px) {
-    .header { padding: 16px 18px; }
-    .title { font-size: 16px; }
-    .header-meta { font-size: 8px; }
+  @media (max-width: 820px) {
     .info-panel {
       top: auto;
       bottom: 200px;
@@ -121,7 +118,7 @@
       right: 16px;
       width: auto;
       padding: 16px 18px;
-      max-height: min(42vh, calc(100vh - 480px));
+      max-height: min(42vh, calc(100dvh - 480px));
       overflow: auto;
     }
     .info-title { font-size: 18px; }
@@ -134,20 +131,11 @@
     }
     .preset-btn { width: 150px; padding: 8px 10px; font-size: 11px; }
     .preset-btn .num { display: none; }
-    .controls {
-      bottom: 16px;
-      padding: 10px 14px;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
     .speed-slider { width: 80px; }
     .toggle-btn { padding: 5px 8px; font-size: 8px; }
-    .hint { display: none; }
-    .divider { display: none; }
   }
   @media (max-height: 520px) and (orientation: landscape) {
-    .info-panel { top: 80px !important; max-height: calc(100vh - 156px) !important; }
+    .info-panel { top: 80px !important; max-height: calc(100dvh - 156px) !important; }
     .presets { top: 64px; right: 16px; transform: none; }
     .preset-btn { width: 180px; padding: 7px 10px; font-size: 11px; }
     .preset-btn .num { display: none; }
@@ -156,17 +144,21 @@
 </head>
 <body>
 
-<div id="canvas-container"></div>
+<main id="canvas-container" aria-label="3D model of the Sun, Earth, and Moon"></main>
 
 <div class="loader" id="loader" role="status" aria-live="polite">
   <div class="loader-text">Igniting the sun…</div>
 </div>
+<noscript>
+  <div class="loader" role="alert" style="z-index:101">
+    <div class="loader-text" style="animation:none">JavaScript is required to explore this page.</div>
+  </div>
+</noscript>
 
 <header class="header">
   <div>
     <h1 class="title">Sol · Terra · Luna<br><em>a study of light</em></h1>
     <div class="subtitle">Interactive · Three Bodies · One Star</div>
-    <a class="nav-link" href="solar-system.html">The Sun &amp; its planets — grand tour ›</a>
   </div>
   <div class="header-meta">
     <div>Earth Day · <span id="meta-day">0.00</span></div>
@@ -238,7 +230,7 @@
 <div class="label-3d earth" id="label-earth" aria-hidden="true">Earth</div>
 <div class="label-3d moon" id="label-moon" aria-hidden="true">Moon</div>
 
-<script src="common.js?v=20260728-6"></script>
+<script src="common.js?v=20260728-7"></script>
 <script src="vendor/three/three.min.js"></script>
 <script src="vendor/three/CopyShader.js"></script>
 <script src="vendor/three/LuminosityHighPassShader.js"></script>
@@ -265,7 +257,8 @@ const camera = new THREE.PerspectiveCamera(
 
 // FXAA in the composer chain handles AA; MSAA on the default framebuffer is
 // wasted because the scene renders into offscreen targets.
-const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
+const renderer = SPACE.createRenderer({ antialias: false, alpha: false });
+if (!renderer) throw new Error('WebGL unavailable');
 renderer.domElement.setAttribute('tabindex', '0');
 renderer.domElement.setAttribute('role', 'img');
 renderer.domElement.setAttribute('aria-label', '3D model of the Sun, Earth, and Moon. Focus it and use the arrow keys to rotate, plus and minus to zoom.');
@@ -1107,8 +1100,10 @@ function animate() {
     sim.moonNodeLongitude += dt * sim.speed * sim.nodePrecessionSpeed;
   }
 
-  // Earth rotates eastward: counter-clockwise when viewed above the north pole.
-  earth.rotation.y = sim.time * sim.earthSpinSpeed;
+  // Earth rotates eastward (CCW from above the north pole). Three.js +rotation.y
+  // is CCW when looking along +Y (from the south) — i.e. westward from above —
+  // so prograde spin must be negative.
+  earth.rotation.y = -sim.time * sim.earthSpinSpeed;
 
   // The Sun's apparent annual path in this explicitly Earth-centered frame.
   sunGroup.position.set(

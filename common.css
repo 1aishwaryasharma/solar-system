@@ -247,8 +247,15 @@ canvas { display: block; }
 .scene-menu a .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.5; }
 .scene-menu a.current .dot { opacity: 1; }
 
-/* Tablet headers carry only the page identity. Live scene metadata remains
-   available through the controls and educational panel below. */
+/* Explore menu is the sole cross-page nav; drop the redundant header links. */
+.nav-link,
+.back-link {
+  display: none !important;
+}
+
+/* Tablet headers carry the page identity; on interactive scenes with a
+   bottom dock, live telemetry relocates to a compact status strip above it.
+   Scrolling pages like Missions keep metadata in the header. */
 @media (max-width: 1024px) {
   .header {
     padding: calc(16px + env(safe-area-inset-top, 0px))
@@ -260,11 +267,33 @@ canvas { display: block; }
     font-size: 18px !important;
     max-width: calc(100vw - 164px);
   }
-  .subtitle,
-  .header-meta,
-  .nav-link,
-  .back-link {
+  .subtitle {
     display: none !important;
+  }
+  body:has(.controls) .header-meta,
+  body:has(.date-controls) .header-meta,
+  body:has(.walk-controls) .header-meta {
+    display: flex !important;
+    position: fixed;
+    bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+    left: calc(16px + env(safe-area-inset-left, 0px));
+    right: calc(16px + env(safe-area-inset-right, 0px));
+    top: auto;
+    text-align: left;
+    flex-wrap: wrap;
+    gap: 2px 14px;
+    justify-content: center;
+    padding: 7px 12px;
+    background: var(--panel);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    font-size: 9px;
+    line-height: 1.45;
+    letter-spacing: 0.12em;
+    pointer-events: none;
+    z-index: 10;
   }
 
   .controls,
@@ -280,6 +309,8 @@ canvas { display: block; }
     overflow-y: hidden;
     overscroll-behavior-x: contain;
     scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 12px, #000 calc(100% - 12px), transparent);
+    mask-image: linear-gradient(90deg, transparent 0, #000 12px, #000 calc(100% - 12px), transparent);
   }
   .controls::-webkit-scrollbar,
   .date-controls::-webkit-scrollbar {
@@ -319,7 +350,7 @@ canvas { display: block; }
   .info-panel.mobile-info-panel {
     top: auto !important;
     right: 12px !important;
-    bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(118px + env(safe-area-inset-bottom, 0px)) !important;
     left: 12px !important;
     width: auto !important;
     max-width: none !important;
@@ -395,6 +426,8 @@ canvas { display: block; }
     overflow-y: hidden;
     overscroll-behavior-x: contain;
     scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 10px, #000 calc(100% - 10px), transparent);
+    mask-image: linear-gradient(90deg, transparent 0, #000 10px, #000 calc(100% - 10px), transparent);
   }
   .controls::-webkit-scrollbar,
   .date-controls::-webkit-scrollbar {
@@ -408,9 +441,11 @@ canvas { display: block; }
   .controls .toggle-group {
     flex-wrap: nowrap;
   }
+  /* Keep the speed caption — an anonymous slider is hard to decode on a phone. */
   .controls .speed-label,
   .date-controls .date-label {
-    display: none;
+    font-size: 8px;
+    letter-spacing: 0.1em;
   }
   .controls .divider {
     display: block !important;
@@ -423,13 +458,71 @@ canvas { display: block; }
   .speed-group { gap: 8px; }
   .speed-value { min-width: 40px; }
 
+  body:has(.controls) .header-meta,
+  body:has(.date-controls) .header-meta,
+  body:has(.walk-controls) .header-meta {
+    bottom: calc(58px + env(safe-area-inset-bottom, 0px));
+    left: calc(12px + env(safe-area-inset-left, 0px));
+    right: calc(12px + env(safe-area-inset-right, 0px));
+  }
+
+  /* First-visit gesture guidance — page-level rules used to hide this entirely. */
+  .hint {
+    bottom: calc(102px + env(safe-area-inset-bottom, 0px));
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    max-width: calc(100vw - 24px);
+    padding: 8px 12px;
+    text-align: center;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    pointer-events: none;
+    transition: opacity 0.35s ease, visibility 0.35s ease;
+  }
+  .hint.is-dismissed {
+    opacity: 0;
+    visibility: hidden;
+  }
+
   .walk-controls {
     bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
   }
 
   .scale-note,
   .stage {
-    bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(118px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
+/* Comfortable hit areas on touch devices without enlarging desktop chrome. */
+@media (pointer: coarse) {
+  .play-btn {
+    width: 44px;
+    height: 44px;
+  }
+  .play-btn svg { width: 16px; height: 16px; }
+  .speed-slider {
+    height: 44px;
+    background-size: 100% 3px;
+  }
+  .speed-slider::-webkit-slider-thumb {
+    width: 18px;
+    height: 18px;
+  }
+  .speed-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+  }
+  .toggle-btn,
+  .scene-nav-btn,
+  .mobile-info-toggle {
+    min-height: 44px;
+    padding-top: 10px;
+    padding-bottom: 10px;
   }
 }
 
@@ -441,12 +534,15 @@ canvas { display: block; }
              calc(16px + env(safe-area-inset-left, 0px));
   }
   .title { font-size: 16px; }
-  .subtitle, .header-meta, .hint, .divider, .speed-label { display: none; }
+  .subtitle, .hint, .divider { display: none; }
+  .header-meta {
+    display: none !important;
+  }
   .info-panel {
     top: calc(64px + env(safe-area-inset-top, 0px)) !important;
     bottom: auto !important;
     left: calc(12px + env(safe-area-inset-left, 0px)) !important;
-    max-height: calc(100vh - 140px) !important;
+    max-height: calc(100dvh - 140px) !important;
     overflow: auto;
     padding: 14px 16px;
   }
@@ -465,7 +561,7 @@ canvas { display: block; }
   }
   .speed-slider { width: 80px; }
   .toggle-group { gap: 4px; flex-wrap: nowrap; }
-  .toggle-btn { padding: 5px 7px; font-size: 7px; }
+  .toggle-btn { padding: 5px 7px; font-size: 9px; }
   .scene-nav {
     top: calc(8px + env(safe-area-inset-top, 0px));
     right: calc(8px + env(safe-area-inset-right, 0px));
