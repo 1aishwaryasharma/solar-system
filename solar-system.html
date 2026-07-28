@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=20260728-2">
+<link rel="stylesheet" href="common.css?v=20260728-5">
 <style>
   /* ── Page-specific styling for the grand tour ── */
   .info-panel { top: 132px; width: 330px; }
@@ -244,7 +244,7 @@
 <script src="vendor/three/RenderPass.js"></script>
 <script src="vendor/three/ShaderPass.js"></script>
 <script src="vendor/three/UnrealBloomPass.js"></script>
-<script src="common.js?v=20260728-2"></script>
+<script src="common.js?v=20260728-5"></script>
 <script>
 'use strict';
 const clamp = SPACE.clamp;
@@ -258,7 +258,9 @@ scene.background = new THREE.Color(0x050810);
 
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.05, 4000);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+// FXAA in the composer chain handles AA; MSAA on the default framebuffer is
+// wasted because the scene renders into offscreen targets.
+const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
 renderer.domElement.setAttribute('tabindex', '0');
 renderer.domElement.setAttribute('role', 'img');
 renderer.domElement.setAttribute('aria-label', '3D model of the solar system. Focus it and use the arrow keys to rotate, plus and minus to zoom.');
@@ -674,13 +676,20 @@ const COMET = (() => {
     const x = Math.cos(angle) * R, z = Math.sin(angle) * R;
     return _p.set(x, -z * Math.sin(incl), z * Math.cos(incl));
   }
+  // Pooled vertex buffer — the scale-mix transition rewrites it in place
+  // instead of allocating 241 vectors and a new attribute every frame.
+  const orbitPos = new Float32Array((SAMPLES + 1) * 3);
+  orbitLine.geometry.setAttribute('position', new THREE.BufferAttribute(orbitPos, 3));
+  orbitLine.frustumCulled = false; // spans the whole orbit; a stale bounds could cull it
   let lastMix = -1;
   function rebuildOrbit(mix) {
     if (Math.abs(mix - lastMix) < 0.0006) return;
     lastMix = mix;
-    const pts = [];
-    for (let i = 0; i <= SAMPLES; i++) pts.push(place(sAngle[i], sAU[i]).clone());
-    orbitLine.geometry.setFromPoints(pts);
+    for (let i = 0; i <= SAMPLES; i++) {
+      place(sAngle[i], sAU[i]);
+      orbitPos[i * 3] = _p.x; orbitPos[i * 3 + 1] = _p.y; orbitPos[i * 3 + 2] = _p.z;
+    }
+    orbitLine.geometry.attributes.position.needsUpdate = true;
   }
 
   const _dir = new THREE.Vector3(), _up = new THREE.Vector3(0, 1, 0), _q = new THREE.Quaternion();
@@ -710,10 +719,13 @@ const COMET = (() => {
   return { nucleus, tail, orbitLine, update };
 })();
 
+// Hoisted once — rebuilt per pick used to allocate a fresh array every tap.
+const selectableMeshes = selectable.map(s => s.mesh);
+
 // ─────────────────────────────────────────────────────────
 // 8. POST-PROCESSING (bloom on the Sun & comet)
 // ─────────────────────────────────────────────────────────
-let composer = null, fxaaPass = null;
+let composer = null, fxaaPass = null, bloomPass = null;
 function setFxaaResolution() {
   if (!fxaaPass) return;
   const pr = renderer.getPixelRatio();
@@ -725,7 +737,8 @@ try {
     composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     composer.setSize(window.innerWidth, window.innerHeight);
     composer.addPass(new THREE.RenderPass(scene, camera));
-    composer.addPass(new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.6, 0.5, 0.8));
+    bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.6, 0.5, 0.8);
+    composer.addPass(bloomPass);
     composer.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
     fxaaPass = new THREE.ShaderPass(THREE.FXAAShader);
     composer.addPass(fxaaPass);
@@ -744,6 +757,14 @@ const cam = SPACE.createOrbitControls(camera, renderer.domElement, {
   onPick: handlePick
 });
 SPACE.bindCameraKeys(cam, { maxDistance: maxDistance, minDistance: 1.5 });
+
+// Adapt render cost to what the device can actually hold.
+const quality = SPACE.createQualityGovernor({
+  bloomPass,
+  composer,
+  fxaaPass,
+  renderer
+});
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -943,7 +964,7 @@ function handlePick(clientX, clientY) {
   ndc.x = (clientX / window.innerWidth) * 2 - 1;
   ndc.y = -(clientY / window.innerHeight) * 2 + 1;
   raycaster.setFromCamera(ndc, camera);
-  const hits = raycaster.intersectObjects(selectable.map(s => s.mesh), false);
+  const hits = raycaster.intersectObjects(selectableMeshes, false);
   if (hits.length && hits[0].object.userData.key) {
     selectBody(hits[0].object.userData.key);
   }
@@ -964,8 +985,10 @@ function selectedObject() {
 function animate() {
   requestAnimationFrame(animate);
   const now = performance.now();
-  const dt = Math.min((now - lastT) / 1000, 0.05);
+  const rawDt = (now - lastT) / 1000;
+  const dt = Math.min(rawDt, 0.05);
   lastT = now;
+  quality.frame(rawDt);
   if (sim.playing) {
     sim.timeDays += dt * DAYS_PER_SEC * sim.speed;
     sim.visualTime += dt;
@@ -1010,7 +1033,7 @@ function animate() {
   SPACE.projectToScreen(COMET.nucleus, labels.comet, camera, -18, sim.showLabels);
 
   const years = sim.timeDays / 365.25;
-  metaElapsed.textContent = years < 1 ? 'Day ' + Math.floor(sim.timeDays) : 'Year ' + years.toFixed(1);
+  SPACE.setText(metaElapsed, years < 1 ? 'Day ' + Math.floor(sim.timeDays) : 'Year ' + years.toFixed(1));
 
   if (composer) composer.render(); else renderer.render(scene, camera);
 }

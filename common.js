@@ -291,6 +291,83 @@ float fbm(vec3 p) {
     return cam;
   }
 
+  // ── Adaptive quality governor ──
+  // Watches a running average of frame time and steps render cost down
+  // (pixel ratio → bloom → shadow-map size) when the device can't hold a
+  // smooth frame rate, and back up when there's headroom again. All hooks
+  // are optional so each scene wires in only what it has.
+  function createQualityGovernor(opts) {
+    const renderer = opts.renderer;
+    const composer = opts.composer || null;
+    const bloomPass = opts.bloomPass || null;
+    const fxaaPass = opts.fxaaPass || null;
+    const shadowLight = opts.shadowLight || null;
+    const basePR = Math.min(window.devicePixelRatio || 1, 2);
+    // Cap every later tier by basePR so degradation never raises the
+    // pixel ratio (e.g. DPR 1 would otherwise jump to 1.25 at tier 2).
+    const PR_STEPS = [
+      basePR,
+      Math.min(basePR, 1.5),
+      Math.min(basePR, 1.25),
+      Math.min(basePR, 1)
+    ];
+    const SHADOW_STEPS = [2048, 2048, 1024, 512];
+    // Ignore gaps larger than this — typically tab suspension, not a slow frame.
+    const MAX_SAMPLE_S = 0.1;
+    // Upgrade needs to be reachable on 60 Hz displays (~16.7 ms vsync).
+    const UPGRADE_MS = 18;
+    const DOWNGRADE_MS = 24;
+    let tier = 0, ema = 16, cooldownUntil = 0, headroomTime = 0;
+
+    function apply() {
+      const pr = PR_STEPS[tier];
+      const w = window.innerWidth, h = window.innerHeight;
+      renderer.setPixelRatio(pr);
+      renderer.setSize(w, h);
+      if (composer) {
+        composer.setPixelRatio(pr);
+        composer.setSize(w, h);
+      }
+      if (fxaaPass) {
+        fxaaPass.material.uniforms.resolution.value.set(1 / (w * pr), 1 / (h * pr));
+      }
+      if (bloomPass) bloomPass.enabled = tier < 2;
+      if (shadowLight && shadowLight.shadow && shadowLight.shadow.mapSize.x !== SHADOW_STEPS[tier]) {
+        shadowLight.shadow.mapSize.set(SHADOW_STEPS[tier], SHADOW_STEPS[tier]);
+        if (shadowLight.shadow.map) {
+          shadowLight.shadow.map.dispose();
+          shadowLight.shadow.map = null;
+        }
+      }
+    }
+
+    return {
+      frame(rawDt) {
+        if (!(rawDt > 0) || rawDt > MAX_SAMPLE_S) return;
+        ema = ema * 0.95 + rawDt * 1000 * 0.05;
+        const now = performance.now();
+        if (now < cooldownUntil) return;
+        if (ema > DOWNGRADE_MS && tier < 3) {
+          tier++; apply(); cooldownUntil = now + 4000; headroomTime = 0;
+        } else if (ema < UPGRADE_MS && tier > 0) {
+          headroomTime += rawDt;
+          if (headroomTime > 6) {
+            tier--; apply(); cooldownUntil = now + 4000; headroomTime = 0;
+          }
+        } else headroomTime = 0;
+      },
+      get tier() { return tier; }
+    };
+  }
+
+  // ── Write textContent only when the value actually changed ──
+  function setText(el, text) {
+    if (el.__spaceText !== text) {
+      el.__spaceText = text;
+      el.textContent = text;
+    }
+  }
+
   // ── Keyboard camera control (arrows rotate, +/− zoom) ──
   // Works with any cam exposing azimuthTarget / elevationTarget /
   // distanceTarget. Ignored while a form field has focus so native
@@ -339,8 +416,12 @@ float fbm(vec3 p) {
       return;
     }
     el.style.display = '';
-    el.style.left = (_v.x * 0.5 + 0.5) * window.innerWidth + 'px';
-    el.style.top  = (_v.y * -0.5 + 0.5) * window.innerHeight + offsetY + 'px';
+    // transform keeps per-frame label movement on the compositor; left/top
+    // stay at their CSS defaults (0) so no layout work is triggered.
+    el.style.transform =
+      'translate(-50%, -50%) translate(' +
+      ((_v.x * 0.5 + 0.5) * window.innerWidth) + 'px, ' +
+      ((_v.y * -0.5 + 0.5) * window.innerHeight + offsetY) + 'px)';
     el.style.opacity = 1;
   }
 
@@ -440,12 +521,14 @@ float fbm(vec3 p) {
     buildNav,
     clamp,
     createOrbitControls,
+    createQualityGovernor,
     createStarfield,
     createSun,
     GLSL_NOISE,
     glowShell,
     initMobileInfoPanels,
     prefersReducedMotion,
-    projectToScreen
+    projectToScreen,
+    setText
   };
 })();

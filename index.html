@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="common.css?v=20260728-2">
+<link rel="stylesheet" href="common.css?v=20260728-5">
 <style>
   /* Shared design tokens & component styles live in common.css.
      Only page-specific rules for the light study remain here. */
@@ -238,7 +238,7 @@
 <div class="label-3d earth" id="label-earth" aria-hidden="true">Earth</div>
 <div class="label-3d moon" id="label-moon" aria-hidden="true">Moon</div>
 
-<script src="common.js?v=20260728-2"></script>
+<script src="common.js?v=20260728-5"></script>
 <script src="vendor/three/three.min.js"></script>
 <script src="vendor/three/CopyShader.js"></script>
 <script src="vendor/three/LuminosityHighPassShader.js"></script>
@@ -263,7 +263,9 @@ const camera = new THREE.PerspectiveCamera(
   45, window.innerWidth / window.innerHeight, 0.1, 2000
 );
 
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+// FXAA in the composer chain handles AA; MSAA on the default framebuffer is
+// wasted because the scene renders into offscreen targets.
+const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
 renderer.domElement.setAttribute('tabindex', '0');
 renderer.domElement.setAttribute('role', 'img');
 renderer.domElement.setAttribute('aria-label', '3D model of the Sun, Earth, and Moon. Focus it and use the arrow keys to rotate, plus and minus to zoom.');
@@ -295,231 +297,17 @@ const EARTH_DAYS_PER_MOON_ORBIT = 27.321661;
 const NODE_PRECESSION_YEARS = 18.6;
 
 // ─────────────────────────────────────────────────────────
-// 3. GLSL NOISE (simplex, Ashima Arts / Stefan Gustavson)
+// 3. STARFIELD AND SUN (shared SPACE primitives)
 // ─────────────────────────────────────────────────────────
-const GLSL_NOISE = `
-vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
-vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
-float snoise(vec3 v) {
-  const vec2 C = vec2(1.0/6.0, 1.0/3.0);
-  const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
-  vec3 i  = floor(v + dot(v, C.yyy));
-  vec3 x0 = v - i + dot(i, C.xxx);
-  vec3 g = step(x0.yzx, x0.xyz);
-  vec3 l = 1.0 - g;
-  vec3 i1 = min(g.xyz, l.zxy);
-  vec3 i2 = max(g.xyz, l.zxy);
-  vec3 x1 = x0 - i1 + C.xxx;
-  vec3 x2 = x0 - i2 + C.yyy;
-  vec3 x3 = x0 - D.yyy;
-  i = mod289(i);
-  vec4 p = permute(permute(permute(
-            i.z + vec4(0.0, i1.z, i2.z, 1.0))
-          + i.y + vec4(0.0, i1.y, i2.y, 1.0))
-          + i.x + vec4(0.0, i1.x, i2.x, 1.0));
-  float n_ = 0.142857142857;
-  vec3 ns = n_ * D.wyz - D.xzx;
-  vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
-  vec4 x_ = floor(j * ns.z);
-  vec4 y_ = floor(j - 7.0 * x_);
-  vec4 x = x_ * ns.x + ns.yyyy;
-  vec4 y = y_ * ns.x + ns.yyyy;
-  vec4 h = 1.0 - abs(x) - abs(y);
-  vec4 b0 = vec4(x.xy, y.xy);
-  vec4 b1 = vec4(x.zw, y.zw);
-  vec4 s0 = floor(b0) * 2.0 + 1.0;
-  vec4 s1 = floor(b1) * 2.0 + 1.0;
-  vec4 sh = -step(h, vec4(0.0));
-  vec4 a0 = b0.xzyw + s0.xzyw * sh.xxyy;
-  vec4 a1 = b1.xzyw + s1.xzyw * sh.zzww;
-  vec3 p0 = vec3(a0.xy, h.x);
-  vec3 p1 = vec3(a0.zw, h.y);
-  vec3 p2 = vec3(a1.xy, h.z);
-  vec3 p3 = vec3(a1.zw, h.w);
-  vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)));
-  p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
-  vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
-  m = m * m;
-  return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
-}
-float fbm(vec3 p) {
-  float f = 0.0;
-  float a = 0.5;
-  for (int i = 0; i < 5; i++) {
-    f += a * snoise(p);
-    p *= 2.02;
-    a *= 0.5;
-  }
-  return f;
-}
-`;
+const starLayer = SPACE.createStarfield();
+scene.add(starLayer.points);
+const starUniforms = starLayer.uniforms;
 
-// ─────────────────────────────────────────────────────────
-// 4. STARFIELD (twinkling shader points)
-// ─────────────────────────────────────────────────────────
-const starUniforms = { uTime: { value: 0 } };
-
-function createStarfield() {
-  const geometry = new THREE.BufferGeometry();
-  const count = 4500;
-  const positions = new Float32Array(count * 3);
-  const colors = new Float32Array(count * 3);
-  const sizes = new Float32Array(count);
-  const phases = new Float32Array(count);
-
-  for (let i = 0; i < count; i++) {
-    // distribute on a large sphere
-    const r = 600 + Math.random() * 400;
-    const theta = Math.random() * Math.PI * 2;
-    const phi = Math.acos(2 * Math.random() - 1);
-    positions[i*3]     = r * Math.sin(phi) * Math.cos(theta);
-    positions[i*3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-    positions[i*3 + 2] = r * Math.cos(phi);
-
-    // subtle color variation
-    const t = Math.random();
-    const tint = t < 0.7 ? [1, 1, 1]
-              : t < 0.85 ? [1, 0.92, 0.78]
-              : [0.78, 0.86, 1];
-    colors[i*3] = tint[0]; colors[i*3+1] = tint[1]; colors[i*3+2] = tint[2];
-
-    sizes[i] = Math.random() < 0.05 ? 5.0 : (1.5 + Math.random() * 2.0);
-    phases[i] = Math.random() * Math.PI * 2;
-  }
-
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-  geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-  geometry.setAttribute('phase', new THREE.BufferAttribute(phases, 1));
-
-  const material = new THREE.ShaderMaterial({
-    uniforms: starUniforms,
-    vertexColors: true,
-    transparent: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-    vertexShader: `
-      attribute float size;
-      attribute float phase;
-      uniform float uTime;
-      varying vec3 vColor;
-      varying float vTwinkle;
-      void main() {
-        vColor = color;
-        vTwinkle = 0.65 + 0.35 * sin(uTime * 1.7 + phase);
-        gl_PointSize = size * (0.85 + 0.3 * sin(uTime * 2.3 + phase * 1.7));
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }`,
-    fragmentShader: `
-      varying vec3 vColor;
-      varying float vTwinkle;
-      void main() {
-        float d = length(gl_PointCoord - 0.5);
-        float a = smoothstep(0.5, 0.0, d) * vTwinkle * 0.9;
-        gl_FragColor = vec4(vColor, a);
-      }`
-  });
-  return new THREE.Points(geometry, material);
-}
-scene.add(createStarfield());
-
-// ─────────────────────────────────────────────────────────
-// 5. SUN — animated turbulent surface + glow shells
-// ─────────────────────────────────────────────────────────
-const sunGroup = new THREE.Group();
+const SUN = SPACE.createSun(SUN_RADIUS);
+const sunGroup = SUN.group;
+const sunUniforms = SUN.uniforms;
+const sunCorona = SUN.corona;
 sunGroup.position.set(-SUN_DISTANCE, 0, 0);
-
-const sunUniforms = { uTime: { value: 0 } };
-
-// core: live granulation via fbm noise, limb darkening at the edge
-const sunCore = new THREE.Mesh(
-  new THREE.SphereGeometry(SUN_RADIUS, 64, 64),
-  new THREE.ShaderMaterial({
-    uniforms: sunUniforms,
-    vertexShader: `
-      varying vec3 vPos;
-      varying vec3 vN;
-      void main() {
-        vPos = position;
-        vN = normalize(normalMatrix * normal);
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }`,
-    fragmentShader: GLSL_NOISE + `
-      varying vec3 vPos;
-      varying vec3 vN;
-      uniform float uTime;
-      void main() {
-        vec3 p = normalize(vPos);
-        float n1 = fbm(p * 3.5 + vec3(uTime * 0.04, uTime * 0.03, -uTime * 0.02));
-        float n2 = fbm(p * 9.0 - vec3(uTime * 0.06, 0.0, uTime * 0.05));
-        float v = clamp(0.5 + n1 * 0.55 + n2 * 0.35, 0.0, 1.0);
-        vec3 deep = vec3(0.82, 0.28, 0.02);
-        vec3 mid  = vec3(1.00, 0.62, 0.12);
-        vec3 hot  = vec3(1.00, 0.95, 0.74);
-        vec3 col = mix(deep, mid, smoothstep(0.18, 0.55, v));
-        col = mix(col, hot, smoothstep(0.55, 0.92, v));
-        float limb = clamp(dot(normalize(vN), vec3(0.0, 0.0, 1.0)), 0.0, 1.0);
-        col *= 0.5 + 0.7 * limb;
-        gl_FragColor = vec4(col * 1.45, 1.0);
-      }`
-  })
-);
-sunGroup.add(sunCore);
-
-// hot inner glow
-const sunInner = new THREE.Mesh(
-  new THREE.SphereGeometry(SUN_RADIUS * 1.08, 64, 64),
-  new THREE.ShaderMaterial({
-    transparent: true,
-    side: THREE.BackSide,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-    uniforms: { c: { value: new THREE.Color(0xffba50) } },
-    vertexShader: `
-      varying vec3 vN;
-      void main() {
-        vN = normalize(normalMatrix * normal);
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }`,
-    fragmentShader: `
-      varying vec3 vN;
-      uniform vec3 c;
-      void main() {
-        float intensity = pow(max(0.7 - dot(vN, vec3(0.0, 0.0, 1.0)), 0.0), 2.0);
-        gl_FragColor = vec4(c, 1.0) * intensity;
-      }`
-  })
-);
-sunGroup.add(sunInner);
-
-// outer corona
-const sunCorona = new THREE.Mesh(
-  new THREE.SphereGeometry(SUN_RADIUS * 1.45, 64, 64),
-  new THREE.ShaderMaterial({
-    transparent: true,
-    side: THREE.BackSide,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-    uniforms: { c: { value: new THREE.Color(0xff8a30) } },
-    vertexShader: `
-      varying vec3 vN;
-      void main() {
-        vN = normalize(normalMatrix * normal);
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }`,
-    fragmentShader: `
-      varying vec3 vN;
-      uniform vec3 c;
-      void main() {
-        float intensity = pow(max(0.55 - dot(vN, vec3(0.0, 0.0, 1.0)), 0.0), 3.0);
-        gl_FragColor = vec4(c, 1.0) * intensity * 0.6;
-      }`
-  })
-);
-sunGroup.add(sunCorona);
-
 scene.add(sunGroup);
 
 // directional light from the sun (parallel rays — realistic for distant star)
@@ -544,7 +332,7 @@ scene.add(sunLight.target);
 scene.add(new THREE.AmbientLight(0x223355, 0.18));
 
 // ─────────────────────────────────────────────────────────
-// 6. EARTH (procedural day surface and night lights)
+// 4. EARTH (textured day surface and night lights)
 // ─────────────────────────────────────────────────────────
 // shared continent shapes — used for both land masses and city lights
 const CONTINENTS = [
@@ -847,7 +635,7 @@ function loadEarthTexture(path, colorTexture = false) {
 const earthTexture = loadEarthTexture('assets/earth/day.jpg', true);
 const earthNormalTexture = loadEarthTexture('assets/earth/normal.jpg');
 const earthSpecularTexture = loadEarthTexture('assets/earth/specular.jpg');
-const nightTexture = loadEarthTexture('assets/earth/lights.png', true);
+const nightTexture = loadEarthTexture('assets/earth/lights.jpg', true);
 const moonTextures = createMoonTextures();
 
 // Earth: phong base (keeps shadow support for eclipses) + injected
@@ -941,7 +729,7 @@ axisLine.visible = false;
 earthGroup.add(axisLine);
 
 // ─────────────────────────────────────────────────────────
-// 7. MOON
+// 5. MOON
 // ─────────────────────────────────────────────────────────
 const moonMaterial = new THREE.MeshPhongMaterial({
   map: moonTextures.color,
@@ -979,10 +767,11 @@ moonOrbitFrame.add(orbitLine);
 scene.add(moonOrbitFrame);
 
 // ─────────────────────────────────────────────────────────
-// 8. POST-PROCESSING (bloom + gamma + FXAA)
+// 6. POST-PROCESSING (bloom + gamma + FXAA)
 // ─────────────────────────────────────────────────────────
 let composer = null;
 let fxaaPass = null;
+let bloomPass = null;
 
 function setFxaaResolution() {
   if (!fxaaPass) return;
@@ -1001,7 +790,7 @@ try {
 
     composer.addPass(new THREE.RenderPass(scene, camera));
 
-    const bloomPass = new THREE.UnrealBloomPass(
+    bloomPass = new THREE.UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
       0.55,   // strength
       0.45,   // radius
@@ -1021,83 +810,22 @@ try {
 }
 
 // ─────────────────────────────────────────────────────────
-// 9. CAMERA CONTROLS (custom orbit)
+// 7. CAMERA CONTROLS (shared orbit controls)
 // ─────────────────────────────────────────────────────────
-const cam = {
-  target: new THREE.Vector3(0, 0, 0),
-  azimuth: 0.3,
-  elevation: 0.2,
-  distance: 11,
-  azimuthTarget: 0.3,
-  elevationTarget: 0.2,
-  distanceTarget: 11
-};
-
-function applyCamera() {
-  const x = cam.target.x + cam.distance * Math.cos(cam.elevation) * Math.sin(cam.azimuth);
-  const y = cam.target.y + cam.distance * Math.sin(cam.elevation);
-  const z = cam.target.z + cam.distance * Math.cos(cam.elevation) * Math.cos(cam.azimuth);
-  camera.position.set(x, y, z);
-  camera.lookAt(cam.target);
-}
-applyCamera();
-
-let dragging = false;
-let lastX = 0, lastY = 0;
-const dom = renderer.domElement;
-
-dom.addEventListener('mousedown', (e) => {
-  dragging = true; lastX = e.clientX; lastY = e.clientY;
+const cam = SPACE.createOrbitControls(camera, renderer.domElement, {
+  maxDistance: 55,
+  minDistance: 3
 });
-window.addEventListener('mousemove', (e) => {
-  if (!dragging) return;
-  cam.azimuthTarget   -= (e.clientX - lastX) * 0.005;
-  cam.elevationTarget += (e.clientY - lastY) * 0.005;
-  cam.elevationTarget = Math.max(-Math.PI/2 + 0.05, Math.min(Math.PI/2 - 0.05, cam.elevationTarget));
-  lastX = e.clientX; lastY = e.clientY;
-});
-window.addEventListener('mouseup', () => dragging = false);
-window.addEventListener('mouseleave', () => dragging = false);
-
-dom.addEventListener('wheel', (e) => {
-  cam.distanceTarget += e.deltaY * 0.012;
-  cam.distanceTarget = Math.max(3, Math.min(55, cam.distanceTarget));
-  e.preventDefault();
-}, { passive: false });
-
-// Touch
-let touchPrev = null, pinchPrev = null;
-dom.addEventListener('touchstart', (e) => {
-  if (e.touches.length === 1) {
-    touchPrev = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-  } else if (e.touches.length === 2) {
-    const dx = e.touches[0].clientX - e.touches[1].clientX;
-    const dy = e.touches[0].clientY - e.touches[1].clientY;
-    pinchPrev = Math.hypot(dx, dy);
-  }
-}, { passive: true });
-dom.addEventListener('touchmove', (e) => {
-  if (e.touches.length === 1 && touchPrev) {
-    const dx = e.touches[0].clientX - touchPrev.x;
-    const dy = e.touches[0].clientY - touchPrev.y;
-    cam.azimuthTarget   -= dx * 0.005;
-    cam.elevationTarget += dy * 0.005;
-    cam.elevationTarget = Math.max(-Math.PI/2 + 0.05, Math.min(Math.PI/2 - 0.05, cam.elevationTarget));
-    touchPrev = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    e.preventDefault();
-  } else if (e.touches.length === 2 && pinchPrev) {
-    const dx = e.touches[0].clientX - e.touches[1].clientX;
-    const dy = e.touches[0].clientY - e.touches[1].clientY;
-    const d = Math.hypot(dx, dy);
-    cam.distanceTarget *= pinchPrev / d;
-    cam.distanceTarget = Math.max(3, Math.min(55, cam.distanceTarget));
-    pinchPrev = d;
-    e.preventDefault();
-  }
-}, { passive: false });
-dom.addEventListener('touchend', () => { touchPrev = null; pinchPrev = null; });
-
 SPACE.bindCameraKeys(cam, { maxDistance: 55, minDistance: 3 });
+
+// Adapt render cost to what the device can actually hold.
+const quality = SPACE.createQualityGovernor({
+  bloomPass,
+  composer,
+  fxaaPass,
+  renderer,
+  shadowLight: sunLight
+});
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -1110,7 +838,7 @@ window.addEventListener('resize', () => {
 });
 
 // ─────────────────────────────────────────────────────────
-// 10. SIMULATION STATE
+// 8. SIMULATION STATE
 // ─────────────────────────────────────────────────────────
 const sim = {
   time: 0,           // simulation time
@@ -1136,7 +864,7 @@ function sliderToSpeed(v) {
 }
 
 // ─────────────────────────────────────────────────────────
-// 11. UI
+// 9. UI
 // ─────────────────────────────────────────────────────────
 const playBtn   = document.getElementById('play-btn');
 const playIcon  = document.getElementById('play-icon');
@@ -1201,7 +929,7 @@ toggleAxis.addEventListener('click', () => {
 });
 
 // ─────────────────────────────────────────────────────────
-// 12. PRESETS
+// 10. PRESETS
 // ─────────────────────────────────────────────────────────
 const presetData = {
   free: {
@@ -1303,30 +1031,7 @@ presetEls.forEach(el => {
 });
 
 // ─────────────────────────────────────────────────────────
-// 13. PROJECT 3D POSITION TO SCREEN (for labels)
-// ─────────────────────────────────────────────────────────
-function project(obj3D, labelEl, offsetY = -34) {
-  const v = new THREE.Vector3();
-  obj3D.getWorldPosition(v);
-  v.project(camera);
-  if (
-    v.z < -1 || v.z > 1 ||
-    Math.abs(v.x) > 1.1 || Math.abs(v.y) > 1.1
-  ) {
-    labelEl.style.opacity = 0;
-    labelEl.style.display = 'none';
-    return;
-  }
-  labelEl.style.display = '';
-  const x = (v.x *  0.5 + 0.5) * window.innerWidth;
-  const y = (v.y * -0.5 + 0.5) * window.innerHeight + offsetY;
-  labelEl.style.left = x + 'px';
-  labelEl.style.top  = y + 'px';
-  labelEl.style.opacity = sim.showLabels ? 1 : 0;
-}
-
-// ─────────────────────────────────────────────────────────
-// 14. ORBIT AND PHASE GEOMETRY
+// 11. ORBIT AND PHASE GEOMETRY
 // ─────────────────────────────────────────────────────────
 function solveEccentricAnomaly(meanAnomaly) {
   let eccentricAnomaly = meanAnomaly;
@@ -1377,7 +1082,7 @@ function detectEvent(moonPos) {
 }
 
 // ─────────────────────────────────────────────────────────
-// 15. ANIMATION LOOP
+// 12. ANIMATION LOOP
 // ─────────────────────────────────────────────────────────
 let lastT = performance.now();
 const _sunDirView = new THREE.Vector3();
@@ -1389,8 +1094,10 @@ const _moonBasePosition = new THREE.Vector3();
 function animate() {
   requestAnimationFrame(animate);
   const now = performance.now();
-  const dt = Math.min((now - lastT) / 1000, 0.05);
+  const rawDt = (now - lastT) / 1000;
+  const dt = Math.min(rawDt, 0.05);
   lastT = now;
+  quality.frame(rawDt);
 
   if (sim.playing) {
     sim.time += dt * sim.speed;
@@ -1401,7 +1108,7 @@ function animate() {
   }
 
   // Earth rotates eastward: counter-clockwise when viewed above the north pole.
-  earth.rotation.y = -sim.time * sim.earthSpinSpeed;
+  earth.rotation.y = sim.time * sim.earthSpinSpeed;
 
   // The Sun's apparent annual path in this explicitly Earth-centered frame.
   sunGroup.position.set(
@@ -1434,10 +1141,7 @@ function animate() {
   moon.lookAt(0, 0, 0);
 
   // Smooth camera
-  cam.azimuth   += (cam.azimuthTarget   - cam.azimuth)   * 0.12;
-  cam.elevation += (cam.elevationTarget - cam.elevation) * 0.12;
-  cam.distance  += (cam.distanceTarget  - cam.distance)  * 0.12;
-  applyCamera();
+  cam.update();
 
   // Animated shader clocks
   const t = SPACE.prefersReducedMotion ? 0 : sim.visualTime;
@@ -1477,15 +1181,15 @@ function animate() {
   );
 
   // Labels
-  project(sunGroup, labelSun, -50);
-  project(earthGroup, labelEarth, -38);
-  project(moon, labelMoon, -22);
+  SPACE.projectToScreen(sunGroup, labelSun, camera, -50, sim.showLabels);
+  SPACE.projectToScreen(earthGroup, labelEarth, camera, -38, sim.showLabels);
+  SPACE.projectToScreen(moon, labelMoon, camera, -22, sim.showLabels);
 
   // Telemetry
   const dayFraction = (sim.time * sim.earthSpinSpeed) / (Math.PI * 2);
-  metaDay.textContent = (dayFraction % 1).toFixed(2);
-  metaPhase.textContent = describePhase(moon.position, sunGroup.position);
-  metaEvent.textContent = detectEvent(moon.position);
+  SPACE.setText(metaDay, (dayFraction % 1).toFixed(2));
+  SPACE.setText(metaPhase, describePhase(moon.position, sunGroup.position));
+  SPACE.setText(metaEvent, detectEvent(moon.position));
 
   if (composer) composer.render();
   else renderer.render(scene, camera);
